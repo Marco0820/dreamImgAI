@@ -1,0 +1,63 @@
+{
+    "Generate": "Generieren",
+    "Community": "Gemeinschaft",
+    "Login": "Anmelden",
+    "Sign Up": "Registrieren",
+    "Logout": "Abmelden",
+    "Generate Your Masterpiece": "Erschaffen Sie Ihr Meisterwerk",
+    "Describe the image you want to create...": "Beschreiben Sie das Bild, das Sie erstellen möchten...",
+    "Generate Image": "Bild generieren",
+    "Community Gallery": "Community-Galerie",
+    "Explore amazing artworks created by the dreamImg.ai community": "Entdecken Sie erstaunliche Kunstwerke, die von der dreamImg.ai-Community erstellt wurden",
+    "nav": {
+        "home": "Startseite",
+        "community": "Gemeinschaft",
+        "features": "Funktionen",
+        "faq": "FAQs",
+        "pricing": "Preise",
+        "login": "Anmelden",
+        "signup": "Registrieren",
+        "logout": "Abmelden"
+    },
+    "pricing": {
+        "title": "Finden Sie den perfekten Plan",
+        "subtitle": "Beginnen Sie kostenlos mit der Erstellung und schalten Sie dann mit einem Pro- oder Premium-Plan mehr Leistung und Funktionen frei.",
+        "mostPopular": "AM BELIEBTESTEN",
+        "month": "Monat",
+        "redirecting": "Weiterleitung zur Kasse...",
+        "free": {
+            "name": "Kostenlos",
+            "description": "Für Einsteiger."
+        },
+        "pro": {
+            "name": "Pro",
+            "description": "Für Power-User und Profis."
+        },
+        "premium": {
+            "name": "Premium",
+            "description": "Für Teams und Unternehmen."
+        },
+        "features": {
+            "generations": "{{count}} Bilderzeugungen pro Monat",
+            "basicModels": "Grundlegende KI-Modelle",
+            "communityAccess": "Community-Zugang",
+            "allModels": "Zugang zu allen KI-Modellen",
+            "fastSpeed": "Schnellere Generierungsgeschwindigkeiten",
+            "prioritySupport": "Bevorzugter Support",
+            "unlimitedGenerations": "Unbegrenzte Bilderzeugungen",
+            "allPro": "Alle Pro-Funktionen",
+            "teamTools": "Tools für die Teamzusammenarbeit",
+            "apiAccess": "API-Zugang"
+        },
+        "buttons": {
+            "current": "Aktueller Plan",
+            "upgradeToPro": "Upgrade auf Pro",
+            "upgradeToPremium": "Upgrade auf Premium"
+        }
+    },
+    "errors": {
+        "loginRequired": "Bitte melden Sie sich an, um einen Plan auszuwählen.",
+        "unexpected": "Ein unerwarteter Fehler ist aufgetreten.",
+        "generic": "Fehler"
+    }
+} 

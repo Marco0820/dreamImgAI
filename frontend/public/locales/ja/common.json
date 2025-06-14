@@ -1,0 +1,22 @@
+{
+    "Generate": "生成",
+    "Community": "コミュニティ",
+    "Login": "ログイン",
+    "Sign Up": "サインアップ",
+    "Logout": "ログアウト",
+    "Generate Your Masterpiece": "傑作を生成する",
+    "Describe the image you want to create...": "作成したい画像を説明してください...",
+    "Generate Image": "画像を生成",
+    "Community Gallery": "コミュニティギャラリー",
+    "Explore amazing artworks created by the dreamImg.ai community": "dreamImg.ai コミュニティによって作成された素晴らしいアートワークをご覧ください",
+    "nav": {
+        "home": "ホーム",
+        "community": "コミュニティ",
+        "features": "特徴",
+        "faq": "よくある質問",
+        "pricing": "価格",
+        "login": "ログイン",
+        "signup": "サインアップ",
+        "logout": "ログアウト"
+    }
+}

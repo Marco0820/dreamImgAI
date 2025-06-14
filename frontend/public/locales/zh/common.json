@@ -1,0 +1,82 @@
+{
+    "features": "特点",
+    "faq": "常见问题",
+    "pricing": "价格",
+    "generate": "生成",
+    "signin": "登录",
+    "logout": "退出",
+    "Community": "社区",
+    "Generate Your Masterpiece": "生成你的杰作",
+    "Describe the image you want to create...": "描述你想要生成的图像...",
+    "Community Gallery": "社区画廊",
+    "Explore amazing artworks created by the dreamImg.ai community": "探索 dreamImg.ai 社区创作的精彩艺术作品",
+    "nav": {
+        "features": "特点",
+        "faqs": "常见问题",
+        "pricing": "价格",
+        "generate": "生成",
+        "login": "登录"
+    },
+    "generator": {
+        "title": "AI 图像生成器",
+        "subtitle": "描述您想创造的图像...",
+        "prompt_placeholder": "输入您的想法，例如：一只戴着皇冠的可爱柯基犬，概念艺术...",
+        "negative_prompt_placeholder": "输入不希望看到的元素，例如：模糊、丑陋、畸形",
+        "add_negative_prompt": "添加负面提示",
+        "hide_negative_prompt": "隐藏负面提示",
+        "high_quality": "高速高品质",
+        "clear": "清除",
+        "generate": "生成",
+        "generating": "生成中...",
+        "output_placeholder": "您生成的图像将显示在这里。",
+        "error_prefix": "错误",
+        "upgrade_title": "Ultimate会员功能",
+        "upgrade_desc": "升级到 Ultimate 解锁高质量图像生成，显著改善细节。",
+        "cancel": "暂不",
+        "upgrade_button": "升级到 Ultimate",
+        "generating_in_progress": "正在生成图像...",
+        "no_image_placeholder": "您生成的图像将显示在这里。",
+        "download": "下载"
+    },
+    "pricing_page": {
+        "title": "找到最适合您的计划",
+        "subtitle": "免费开始创作，然后通过专业版或高级版解锁更多功能。",
+        "mostPopular": "最受欢迎",
+        "month": "月",
+        "redirecting": "正在跳转到支付页面...",
+        "free": {
+            "name": "免费版",
+            "description": "适合刚开始的个人用户。"
+        },
+        "pro": {
+            "name": "专业版",
+            "description": "适合重度用户和专业人士。"
+        },
+        "premium": {
+            "name": "高级版",
+            "description": "适合团队和企业用户。"
+        },
+        "features": {
+            "generations": "每月 {{count}} 次图像生成",
+            "basicModels": "基础 AI 模型",
+            "communityAccess": "社区访问权限",
+            "allModels": "访问所有 AI 模型",
+            "fastSpeed": "更快的生成速度",
+            "prioritySupport": "优先技术支持",
+            "unlimitedGenerations": "无限图像生成",
+            "allPro": "所有专业版功能",
+            "teamTools": "团队协作工具",
+            "apiAccess": "API 访问权限"
+        },
+        "buttons": {
+            "current": "当前计划",
+            "upgradeToPro": "升级到专业版",
+            "upgradeToPremium": "升级到高级版"
+        }
+    },
+    "errors": {
+        "loginRequired": "请登录以选择计划。",
+        "unexpected": "发生了未知错误。",
+        "generic": "错误"
+    }
+} 

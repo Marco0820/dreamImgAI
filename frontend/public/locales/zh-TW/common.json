@@ -1,0 +1,63 @@
+{
+    "Generate": "生成",
+    "Community": "社群",
+    "Login": "登入",
+    "Sign Up": "註冊",
+    "Logout": "登出",
+    "Generate Your Masterpiece": "生成您的傑作",
+    "Describe the image you want to create...": "描述您想要創造的圖像...",
+    "Generate Image": "生成圖像",
+    "Community Gallery": "社群畫廊",
+    "Explore amazing artworks created by the dreamImg.ai community": "探索 dreamImg.ai 社群創作的精彩藝術作品",
+    "nav": {
+        "home": "首頁",
+        "community": "社群",
+        "features": "特點",
+        "faq": "常見問題",
+        "pricing": "定價",
+        "login": "登入",
+        "signup": "註冊",
+        "logout": "登出"
+    },
+    "pricing": {
+        "title": "找到最適合您的方案",
+        "subtitle": "免費開始創作，然後透過專業版或高級版解鎖更多功能。",
+        "mostPopular": "最受歡迎",
+        "month": "月",
+        "redirecting": "正在重定向到結帳...",
+        "free": {
+            "name": "免費",
+            "description": "適合剛入門的個人。"
+        },
+        "pro": {
+            "name": "專業版",
+            "description": "適合高級用戶和專業人士。"
+        },
+        "premium": {
+            "name": "高級版",
+            "description": "適合團隊和企業。"
+        },
+        "features": {
+            "generations": "每月 {{count}} 次圖像生成",
+            "basicModels": "基礎 AI 模型",
+            "communityAccess": "社群訪問權限",
+            "allModels": "訪問所有 AI 模型",
+            "fastSpeed": "更快的生成速度",
+            "prioritySupport": "優先支援",
+            "unlimitedGenerations": "無限圖像生成",
+            "allPro": "所有專業版功能",
+            "teamTools": "團隊協作工具",
+            "apiAccess": "API 訪問"
+        },
+        "buttons": {
+            "current": "當前方案",
+            "upgradeToPro": "升級到專業版",
+            "upgradeToPremium": "升級到高級版"
+        }
+    },
+    "errors": {
+        "loginRequired": "請登入以選擇方案。",
+        "unexpected": "發生意外錯誤。",
+        "generic": "錯誤"
+    }
+} 

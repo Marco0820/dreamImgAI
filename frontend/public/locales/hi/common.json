@@ -1,0 +1,61 @@
+{
+    "Generate": "उत्पन्न करें",
+    "Community": "समुदाय",
+    "Login": "लॉग इन करें",
+    "Sign Up": "साइन अप करें",
+    "Logout": "लॉग आउट",
+    "Generate Your Masterpiece": "अपनी उत्कृष्ट कृति उत्पन्न करें",
+    "Describe the image you want to create...": "वह छवि बताएं जिसे आप बनाना चाहते हैं...",
+    "Generate Image": "छवि उत्पन्न करें",
+    "Community Gallery": "सामुदायिक गैलरी",
+    "Explore amazing artworks created by the dreamImg.ai community": "dreamImg.ai समुदाय द्वारा बनाई गई अद्भुत कलाकृतियों का अन्वेषण करें",
+    "nav": {
+        "home": "होम",
+        "community": "समुदाय",
+        "pricing": "कीमत",
+        "login": "लॉग इन करें",
+        "signup": "साइन अप करें",
+        "logout": "लॉग आउट"
+    },
+    "pricing": {
+        "title": "सही योजना खोजें",
+        "subtitle": "मुफ्त में बनाना शुरू करें, फिर प्रो या प्रीमियम योजना के साथ अधिक शक्ति और सुविधाएँ अनलॉक करें।",
+        "mostPopular": "सबसे लोकप्रिय",
+        "month": "माह",
+        "redirecting": "चेकआउट पर पुनर्निर्देशित किया जा रहा है...",
+        "free": {
+            "name": "नि: शुल्क",
+            "description": "शुरुआत करने वाले व्यक्तियों के लिए।"
+        },
+        "pro": {
+            "name": "प्रो",
+            "description": "शक्तिशाली उपयोगकर्ताओं और पेशेवरों के लिए।"
+        },
+        "premium": {
+            "name": "प्रीमियम",
+            "description": "टीमों और व्यवसायों के लिए।"
+        },
+        "features": {
+            "generations": "{{count}} प्रति माह छवि निर्माण",
+            "basicModels": "बुनियादी एआई मॉडल",
+            "communityAccess": "सामुदायिक पहुंच",
+            "allModels": "सभी एआई मॉडल तक पहुंच",
+            "fastSpeed": "तेज निर्माण गति",
+            "prioritySupport": "प्राथमिकता समर्थन",
+            "unlimitedGenerations": "असीमित छवि निर्माण",
+            "allPro": "सभी प्रो सुविधाएँ",
+            "teamTools": "टीम सहयोग उपकरण",
+            "apiAccess": "एपीआई एक्सेस"
+        },
+        "buttons": {
+            "current": "वर्तमान योजना",
+            "upgradeToPro": "प्रो में अपग्रेड करें",
+            "upgradeToPremium": "प्रीमियम में अपग्रेड करें"
+        }
+    },
+    "errors": {
+        "loginRequired": "कृपया योजना चुनने के लिए लॉग इन करें।",
+        "unexpected": "एक अप्रत्याशित त्रुटि हुई।",
+        "generic": "त्रुटि"
+    }
+} 

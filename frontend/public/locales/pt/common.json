@@ -1,0 +1,63 @@
+{
+    "Generate": "Gerar",
+    "Community": "Comunidade",
+    "Login": "Conecte-se",
+    "Sign Up": "Inscrever-se",
+    "Logout": "Sair",
+    "Generate Your Masterpiece": "Gere sua obra-prima",
+    "Describe the image you want to create...": "Descreva a imagem que você deseja criar...",
+    "Generate Image": "Gerar imagem",
+    "Community Gallery": "Galeria da comunidade",
+    "Explore amazing artworks created by the dreamImg.ai community": "Explore obras de arte incríveis criadas pela comunidade dreamImg.ai",
+    "nav": {
+        "home": "Início",
+        "community": "Comunidade",
+        "features": "Recursos",
+        "faq": "Perguntas frequentes",
+        "pricing": "Preços",
+        "login": "Conecte-se",
+        "signup": "Inscrever-se",
+        "logout": "Sair"
+    },
+    "pricing": {
+        "title": "Encontre o plano perfeito",
+        "subtitle": "Comece a criar gratuitamente e, em seguida, desbloqueie mais poder e recursos com um plano Pro ou Premium.",
+        "mostPopular": "MAIS POPULAR",
+        "month": "mês",
+        "redirecting": "Redirecionando para o checkout...",
+        "free": {
+            "name": "Grátis",
+            "description": "Para pessoas que estão começando."
+        },
+        "pro": {
+            "name": "Pro",
+            "description": "Para usuários avançados e profissionais."
+        },
+        "premium": {
+            "name": "Premium",
+            "description": "Para equipes e empresas."
+        },
+        "features": {
+            "generations": "{{count}} gerações de imagens por mês",
+            "basicModels": "Modelos básicos de IA",
+            "communityAccess": "Acesso à comunidade",
+            "allModels": "Acesso a todos los modelos de IA",
+            "fastSpeed": "Velocidades de geração mais rápidas",
+            "prioritySupport": "Suporte prioritário",
+            "unlimitedGenerations": "Gerações de imagens ilimitadas",
+            "allPro": "Todos os recursos Pro",
+            "teamTools": "Ferramentas de colaboração em equipe",
+            "apiAccess": "Acesso à API"
+        },
+        "buttons": {
+            "current": "Plano atual",
+            "upgradeToPro": "Atualizar para Pro",
+            "upgradeToPremium": "Atualizar para Premium"
+        }
+    },
+    "errors": {
+        "loginRequired": "Faça login para escolher um plano.",
+        "unexpected": "Ocorreu um erro inesperado.",
+        "generic": "Erro"
+    }
+} 

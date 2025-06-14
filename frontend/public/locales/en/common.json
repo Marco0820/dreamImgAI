@@ -1,0 +1,68 @@
+{
+    "features": "Features",
+    "faq": "FAQs",
+    "pricing": "Pricing",
+    "generate": "Generate",
+    "signin": "Sign In",
+    "logout": "Logout",
+    "Community": "Community",
+    "Generate Your Masterpiece": "Generate Your Masterpiece",
+    "Describe the image you want to create...": "Describe the image you want to create...",
+    "Community Gallery": "Community Gallery",
+    "Explore amazing artworks created by the dreamImg.ai community": "Explore amazing artworks created by the dreamImg.ai community",
+    "generator": {
+        "title": "AI Image Generator",
+        "subtitle": "Describe the image you want to create...",
+        "prompt_placeholder": "What do you want to see? A Shiba Inu in an astronaut suit on a street in Tokyo at night...",
+        "negative_prompt_placeholder": "Negative prompt (optional): What not to include? e.g., blurry, ugly, deformed...",
+        "add_negative_prompt": "Add Negative Prompt",
+        "hide_negative_prompt": "Hide Negative Prompt",
+        "clear": "Clear",
+        "generate": "Generate",
+        "generating": "Generating...",
+        "generating_in_progress": "Generating image...",
+        "no_image_placeholder": "Your generated images will appear here.",
+        "download": "Download"
+    },
+    "pricing_page": {
+        "title": "Find the perfect plan for you",
+        "subtitle": "Start creating for free, then unlock more with a Pro or Premium plan.",
+        "mostPopular": "Most Popular",
+        "month": "mo",
+        "redirecting": "Redirecting to checkout...",
+        "free": {
+            "name": "Free",
+            "description": "For individuals just getting started."
+        },
+        "pro": {
+            "name": "Pro",
+            "description": "For heavy users and professionals."
+        },
+        "premium": {
+            "name": "Premium",
+            "description": "For teams and businesses."
+        },
+        "features": {
+            "generations": "{{count}} monthly image generations",
+            "basicModels": "Basic AI Models",
+            "communityAccess": "Community Access",
+            "allModels": "Access to all AI models",
+            "fastSpeed": "Faster generation speed",
+            "prioritySupport": "Priority Support",
+            "unlimitedGenerations": "Unlimited Generations",
+            "allPro": "All Pro features",
+            "teamTools": "Team Collaboration Tools",
+            "apiAccess": "API Access"
+        },
+        "buttons": {
+            "current": "Current Plan",
+            "upgradeToPro": "Upgrade to Pro",
+            "upgradeToPremium": "Upgrade to Premium"
+        }
+    },
+    "errors": {
+        "loginRequired": "Please log in to choose a plan.",
+        "unexpected": "An unexpected error occurred.",
+        "generic": "Error"
+    }
+} 

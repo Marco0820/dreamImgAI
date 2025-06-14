@@ -1,0 +1,68 @@
+{
+    "features": "Características",
+    "faq": "Preguntas Frecuentes",
+    "pricing": "Precios",
+    "generate": "Generar",
+    "signin": "Iniciar Sesión",
+    "logout": "Cerrar Sesión",
+    "Community": "Comunidad",
+    "Generate Your Masterpiece": "Genera Tu Obra Maestra",
+    "Describe the image you want to create...": "Describe la imagen que quieres crear...",
+    "Community Gallery": "Galería de la Comunidad",
+    "Explore amazing artworks created by the dreamImg.ai community": "Explora increíbles obras de arte creadas por la comunidad de dreamImg.ai",
+    "generator": {
+        "title": "Generador de Imágenes con IA",
+        "subtitle": "Describe la imagen que quieres crear...",
+        "prompt_placeholder": "¿Qué quieres ver? Un Shiba Inu con traje de astronauta en una calle de Tokio por la noche...",
+        "negative_prompt_placeholder": "Prompt negativo (opcional): ¿Qué no incluir? Ej: borroso, feo, deforme...",
+        "add_negative_prompt": "Añadir Prompt Negativo",
+        "hide_negative_prompt": "Ocultar Prompt Negativo",
+        "clear": "Limpiar",
+        "generate": "Generar",
+        "generating": "Generando...",
+        "generating_in_progress": "Generando imagen...",
+        "no_image_placeholder": "Tus imágenes generadas aparecerán aquí.",
+        "download": "Descargar"
+    },
+    "pricing_page": {
+        "title": "Encuentra el plan perfecto para ti",
+        "subtitle": "Empieza a crear gratis, luego desbloquea más con un plan Pro o Premium.",
+        "mostPopular": "Más Popular",
+        "month": "mes",
+        "redirecting": "Redirigiendo al pago...",
+        "free": {
+            "name": "Gratis",
+            "description": "Para individuos que recién comienzan."
+        },
+        "pro": {
+            "name": "Pro",
+            "description": "Para usuarios avanzados y profesionales."
+        },
+        "premium": {
+            "name": "Premium",
+            "description": "Para equipos y empresas."
+        },
+        "features": {
+            "generations": "{{count}} generaciones de imágenes mensuales",
+            "basicModels": "Modelos de IA básicos",
+            "communityAccess": "Acceso a la comunidad",
+            "allModels": "Acceso a todos los modelos de IA",
+            "fastSpeed": "Velocidad de generación más rápida",
+            "prioritySupport": "Soporte prioritario",
+            "unlimitedGenerations": "Generaciones ilimitadas",
+            "allPro": "Todas las funciones Pro",
+            "teamTools": "Herramientas de colaboración en equipo",
+            "apiAccess": "Acceso a la API"
+        },
+        "buttons": {
+            "current": "Plan Actual",
+            "upgradeToPro": "Actualizar a Pro",
+            "upgradeToPremium": "Actualizar a Premium"
+        }
+    },
+    "errors": {
+        "loginRequired": "Por favor, inicie sesión para elegir un plan.",
+        "unexpected": "Ocurrió un error inesperado.",
+        "generic": "Error"
+    }
+} 

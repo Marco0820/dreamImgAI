@@ -1,0 +1,63 @@
+{
+    "Generate": "Genera",
+    "Community": "Comunità",
+    "Login": "Accesso",
+    "Sign Up": "Iscriviti",
+    "Logout": "Esci",
+    "Generate Your Masterpiece": "Genera il tuo capolavoro",
+    "Describe the image you want to create...": "Descrivi l'immagine che vuoi creare...",
+    "Generate Image": "Genera immagine",
+    "Community Gallery": "Galleria della comunità",
+    "Explore amazing artworks created by the dreamImg.ai community": "Esplora fantastiche opere d'arte create dalla comunità di dreamImg.ai",
+    "nav": {
+        "home": "Home",
+        "community": "Comunità",
+        "features": "Caratteristiche",
+        "faq": "FAQ",
+        "pricing": "Prezzi",
+        "login": "Accesso",
+        "signup": "Iscriviti",
+        "logout": "Esci"
+    },
+    "pricing": {
+        "title": "Trova il piano perfetto",
+        "subtitle": "Inizia a creare gratuitamente, poi sblocca più potenza e funzionalità con un piano Pro o Premium.",
+        "mostPopular": "PIÙ POPOLARE",
+        "month": "mese",
+        "redirecting": "Reindirizzamento al checkout...",
+        "free": {
+            "name": "Gratuito",
+            "description": "Per chi sta iniziando."
+        },
+        "pro": {
+            "name": "Pro",
+            "description": "Per utenti esperti e professionisti."
+        },
+        "premium": {
+            "name": "Premium",
+            "description": "Per team e aziende."
+        },
+        "features": {
+            "generations": "{{count}} generazioni di immagini al mese",
+            "basicModels": "Modelli di IA di base",
+            "communityAccess": "Accesso alla comunità",
+            "allModels": "Accesso a tutti i modelli di IA",
+            "fastSpeed": "Velocità di generazione più elevate",
+            "prioritySupport": "Supporto prioritario",
+            "unlimitedGenerations": "Generazioni di immagini illimitate",
+            "allPro": "Tutte le funzionalità Pro",
+            "teamTools": "Strumenti di collaborazione per team",
+            "apiAccess": "Accesso API"
+        },
+        "buttons": {
+            "current": "Piano attuale",
+            "upgradeToPro": "Passa a Pro",
+            "upgradeToPremium": "Passa a Premium"
+        }
+    },
+    "errors": {
+        "loginRequired": "Effettua il login per scegliere un piano.",
+        "unexpected": "Si è verificato un errore imprevisto.",
+        "generic": "Errore"
+    }
+} 

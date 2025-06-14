@@ -1,0 +1,63 @@
+{
+    "Generate": "Générer",
+    "Community": "Communauté",
+    "Login": "Connexion",
+    "Sign Up": "S'inscrire",
+    "Logout": "Déconnexion",
+    "Generate Your Masterpiece": "Générez votre chef-d'œuvre",
+    "Describe the image you want to create...": "Décrivez l'image que vous souhaitez créer...",
+    "Generate Image": "Générer une image",
+    "Community Gallery": "Galerie communautaire",
+    "Explore amazing artworks created by the dreamImg.ai community": "Découvrez des œuvres d'art incroyables créées par la communauté dreamImg.ai",
+    "nav": {
+        "home": "Accueil",
+        "community": "Communauté",
+        "features": "Fonctionnalités",
+        "faq": "FAQ",
+        "pricing": "Tarifs",
+        "login": "Connexion",
+        "signup": "S'inscrire",
+        "logout": "Déconnexion"
+    },
+    "pricing": {
+        "title": "Trouvez le plan parfait",
+        "subtitle": "Commencez à créer gratuitement, puis débloquez plus de puissance et de fonctionnalités avec un plan Pro ou Premium.",
+        "mostPopular": "LE PLUS POPULAIRE",
+        "month": "mois",
+        "redirecting": "Redirection vers le paiement...",
+        "free": {
+            "name": "Gratuit",
+            "description": "Pour les personnes qui débutent."
+        },
+        "pro": {
+            "name": "Pro",
+            "description": "Pour les utilisateurs expérimentés et les professionnels."
+        },
+        "premium": {
+            "name": "Premium",
+            "description": "Pour les équipes et les entreprises."
+        },
+        "features": {
+            "generations": "{{count}} générations d'images par mois",
+            "basicModels": "Modèles d'IA de base",
+            "communityAccess": "Accès à la communauté",
+            "allModels": "Accès à tous les modèles d'IA",
+            "fastSpeed": "Vitesses de génération plus rapides",
+            "prioritySupport": "Support prioritaire",
+            "unlimitedGenerations": "Générations d'images illimitées",
+            "allPro": "Toutes les fonctionnalités Pro",
+            "teamTools": "Outils de collaboration d'équipe",
+            "apiAccess": "Accès API"
+        },
+        "buttons": {
+            "current": "Plan actuel",
+            "upgradeToPro": "Passer à Pro",
+            "upgradeToPremium": "Passer à Premium"
+        }
+    },
+    "errors": {
+        "loginRequired": "Veuillez vous connecter pour choisir un plan.",
+        "unexpected": "Une erreur inattendue est survenue.",
+        "generic": "Erreur"
+    }
+} 
