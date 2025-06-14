@@ -60,13 +60,9 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = settings.DATABASE_URL
-    connectable = engine_from_config(
-        configuration,
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    # This block is sent directly to the create_engine() function
+    from sqlalchemy import create_engine
+    connectable = create_engine(settings.DATABASE_URL, connect_args={"client_encoding": "utf8"})
 
     with connectable.connect() as connection:
         context.configure(

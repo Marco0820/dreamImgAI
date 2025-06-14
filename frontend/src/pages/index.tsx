@@ -1,9 +1,11 @@
-import HeroSection from '@/components/landing/HeroSection';
-import FeaturesSection from '@/components/landing/FeaturesSection';
-import FaqSection from '@/components/landing/FaqSection';
+import HeroSection from '../components/landing/HeroSection';
+import FeaturesSection from '../components/landing/FeaturesSection';
+import FaqSection from '../components/landing/FaqSection';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { GetStaticProps } from 'next';
+import { type NextPage } from "next";
 
-export default function Home() {
+const Home: NextPage = () => {
   return (
     <>
       <HeroSection />
@@ -11,10 +13,12 @@ export default function Home() {
       <FaqSection />
     </>
   );
-}
+};
 
-export const getStaticProps = async ({ locale }: { locale: string }) => ({
+export const getStaticProps: GetStaticProps = async ({ locale }) => ({
   props: {
-    ...(await serverSideTranslations(locale, ['common'])),
+    ...(await serverSideTranslations(locale ?? 'en', ['common'])),
   },
-}); 
+});
+
+export default Home; 

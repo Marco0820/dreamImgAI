@@ -1,8 +1,13 @@
 export interface User {
     id: number;
-    username: string;
+    username: string | null;
     email: string;
     is_active: boolean;
+    avatar: string | null;
+    bio: string | null;
+    stripe_customer_id: string | null;
+    created_at: string;
+    subscription?: any;
 }
 
 export interface Image {

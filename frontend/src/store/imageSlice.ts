@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { toast } from 'react-toastify';
-import api from '@/lib/api'; // Corrected path
+import api from '../lib/api'; // Corrected path
 import axios from 'axios';
-import { RootState } from '@/store';
+import { RootState } from '.';
 
 // Type for a single generated image - corrected field name
 export interface GeneratedImage {

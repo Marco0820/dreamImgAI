@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { signupUser } from '@/store/authSlice';
-import { AppDispatch } from '@/store/store';
+import { signupUser } from '../store/authSlice';
+import { AppDispatch } from '../store';
 
 const SignupPage = () => {
     const dispatch = useDispatch<AppDispatch>();

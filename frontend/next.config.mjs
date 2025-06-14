@@ -1,16 +1,19 @@
-import nextI18NextConfig from './next-i18next.config.js';
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en', 'zh'],
+  },
   reactStrictMode: true,
-  i18n: nextI18NextConfig.i18n,
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'oaidalleapiprodscus.blob.core.windows.net',
-        port: '',
-        pathname: '/**',
+        hostname: 'replicate.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'replicate.delivery',
       },
     ],
   },

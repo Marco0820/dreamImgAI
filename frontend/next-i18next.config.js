@@ -5,8 +5,10 @@
  */
 module.exports = {
     i18n: {
-      defaultLocale: 'zh',
-      locales: ['en', 'zh', 'zh-TW', 'ja', 'ko', 'de', 'fr', 'it', 'es', 'pt', 'hi'],
+      defaultLocale: 'en',
+      locales: ['en', 'zh'],
+      defaultNS: 'common',
+      ns: ['common'],
     },
     /** To avoid issues when deploying to some paas (vercel...) */
     localePath:
@@ -15,4 +17,5 @@ module.exports = {
         : '/locales',
 
     reloadOnPrerender: process.env.NODE_ENV === 'development',
+    react: { useSuspense: false },
   }; 

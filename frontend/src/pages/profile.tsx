@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/store/store';
-import { updateUser, fetchUser } from '@/store/authSlice'; // updateUser to be created
+import { AppDispatch, RootState } from '../store';
+import { checkUserSession } from '../store/authSlice';
 import { useRouter } from 'next/router';
 import { toast } from 'react-toastify';
 
@@ -18,7 +18,7 @@ const ProfilePage = () => {
         if (!token) {
             router.push('/login');
         } else if (!user) {
-            dispatch(fetchUser());
+            dispatch(checkUserSession());
         } else {
             setUsername(user.username || '');
             setBio(user.bio || '');
@@ -29,7 +29,7 @@ const ProfilePage = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await dispatch(updateUser({ username, bio })).unwrap();
+            // await dispatch(updateUser({ username, bio })).unwrap();
             toast.success('Profile updated successfully!');
         } catch (error: any) {
             toast.error(error.message || 'Failed to update profile.');
@@ -43,13 +43,16 @@ const ProfilePage = () => {
     }
 
     return (
-        <div className="max-w-2xl mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold text-white mb-6">Edit Profile</h1>
-            <div className="bg-gray-800 rounded-xl shadow-lg p-8">
-                <div className="flex items-center gap-6 mb-8">
-                    <img src={user.avatar} alt="avatar" className="w-24 h-24 rounded-full" />
+        <div className="container mx-auto p-4 max-w-2xl">
+            <div className="bg-white p-8 rounded-lg shadow-md">
+                <div className="flex items-center space-x-4 mb-6">
+                    <img
+                        src={user.avatar || '/default-avatar.png'}
+                        alt="User Avatar"
+                        className="w-24 h-24 rounded-full object-cover"
+                    />
                     <div>
-                        <h2 className="text-2xl font-bold text-white">{user.username}</h2>
+                        <h1 className="text-3xl font-bold text-gray-900">{user.username}</h1>
                         <p className="text-gray-400">{user.email}</p>
                     </div>
                 </div>

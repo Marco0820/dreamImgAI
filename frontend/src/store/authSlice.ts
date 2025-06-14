@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import api from '@/lib/api';
+import api from '../lib/api';
 import { toast } from 'react-toastify';
 import { User } from '../types';
-import { RootState } from './store';
+import { RootState } from '.';
 
 interface AuthState {
     user: User | null;

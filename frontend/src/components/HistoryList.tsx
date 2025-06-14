@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchHistory } from '@/store/imageSlice';
-import { RootState, AppDispatch } from '@/store/store';
+import { fetchHistory } from '../store/imageSlice';
+import { RootState, AppDispatch } from '../store';
 
 interface HistoryItem {
     id: number;

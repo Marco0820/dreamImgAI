@@ -17,7 +17,7 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    images = relationship("Image", back_populates="user")
+    images = relationship("Image", back_populates="owner")
     shared_images = relationship("SharedImage", back_populates="user")
     favorites = relationship("Favorite", back_populates="user")
     subscription = relationship("Subscription", back_populates="user", uselist=False)
@@ -53,7 +53,7 @@ class Image(Base):
     __tablename__ = "images"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    owner_id = Column(Integer, ForeignKey("users.id"))
     prompt = Column(Text)
     negative_prompt = Column(Text, nullable=True)
     model = Column(String)
@@ -62,7 +62,7 @@ class Image(Base):
     is_public = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    user = relationship("User", back_populates="images")
+    owner = relationship("User", back_populates="images")
     shared_image = relationship("SharedImage", uselist=False, back_populates="image")
 
 class SharedImage(Base):

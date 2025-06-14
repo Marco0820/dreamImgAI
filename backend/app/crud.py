@@ -95,12 +95,10 @@ def update_subscription_status(db: Session, stripe_subscription_id: str, new_sta
     return subscription
 
 # Image CRUD
-def create_user_image(db: Session, user_id: int, image: schemas.ImageGenerate, image_url: str):
+def create_user_image(db: Session, user_id: int, prompt: str, image_url: str):
     db_image = models.Image(
-        user_id=user_id,
-        prompt=image.prompt,
-        model=image.model,
-        parameters=json.dumps(image.parameters),
+        owner_id=user_id,
+        prompt=prompt,
         image_url=image_url
     )
     db.add(db_image)
@@ -109,15 +107,15 @@ def create_user_image(db: Session, user_id: int, image: schemas.ImageGenerate, i
     return db_image
 
 def get_image(db: Session, image_id: int, user_id: int):
-    return db.query(models.Image).filter(models.Image.id == image_id, models.Image.user_id == user_id).first()
+    return db.query(models.Image).filter(models.Image.id == image_id, models.Image.owner_id == user_id).first()
 
 def get_user_images(db: Session, user_id: int, skip: int = 0, limit: int = 100):
-    return db.query(models.Image).filter(models.Image.user_id == user_id).offset(skip).limit(limit).all()
+    return db.query(models.Image).filter(models.Image.owner_id == user_id).offset(skip).limit(limit).all()
 
 # Shared Image CRUD
 def share_image(db: Session, image_id: int, user_id: int):
     # First, mark the original image as public
-    db_image = db.query(models.Image).filter(models.Image.id == image_id, models.Image.user_id == user_id).first()
+    db_image = db.query(models.Image).filter(models.Image.id == image_id, models.Image.owner_id == user_id).first()
     if db_image:
         db_image.is_public = True
         

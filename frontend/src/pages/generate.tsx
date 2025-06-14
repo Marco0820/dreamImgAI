@@ -2,18 +2,20 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { AppDispatch, RootState } from '@/store';
-import { generateImage, setParameters } from '@/store/imageSlice';
-import ModelSelector, { Model } from '@/components/ModelSelector';
-import ParametersPanel from '@/components/ParametersPanel';
-import HistoryList from '@/components/HistoryList';
-import SDXLGenerator from '@/components/SDXLGenerator';
+import { AppDispatch, RootState } from '../store';
+import { generateImage, setParameters } from '../store/imageSlice';
+import ModelSelector, { Model } from '../components/ModelSelector';
+import ParametersPanel from '../components/ParametersPanel';
+import HistoryList from '../components/HistoryList';
+import SDXLGenerator from '../components/SDXLGenerator';
+import { GetStaticProps, type NextPage } from "next";
 
-const GeneratePage = () => {
+const GeneratePage: NextPage = () => {
   const [prompt, setPrompt] = useState('');
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation('common');
   const { generating, error, parameters } = useSelector((state: RootState) => state.image);
+  const token = useSelector((state: RootState) => state.auth.token);
   const [selectedModel, setSelectedModel] = useState<Model>({ id: 'dall-e-3', name: 'DALL·E 3' });
 
   const availableModels: Model[] = [
@@ -23,7 +25,14 @@ const GeneratePage = () => {
 
   const handleGenerate = () => {
     if (prompt) {
-      dispatch(generateImage({ prompt, model: selectedModel.id, parameters }));
+      dispatch(generateImage({ prompt, model: selectedModel.id, parameters, token }));
+    }
+  };
+
+  const handleModelChange = (modelId: string) => {
+    const model = availableModels.find(m => m.id === modelId);
+    if (model) {
+      setSelectedModel(model);
     }
   };
 
@@ -42,8 +51,8 @@ const GeneratePage = () => {
           <div className="mt-4 flex flex-col sm:flex-row justify-between items-center">
             <ModelSelector
               models={availableModels}
-              selectedModel={selectedModel}
-              onModelChange={setSelectedModel}
+              selectedModel={selectedModel.id}
+              onModelChange={handleModelChange}
             />
             <button
               onClick={handleGenerate}
@@ -69,12 +78,10 @@ const GeneratePage = () => {
   );
 };
 
-export async function getStaticProps({ locale }: { locale: string }) {
-  return {
-    props: {
-      ...(await serverSideTranslations(locale, ['common'])),
-    },
-  };
-}
+export const getStaticProps: GetStaticProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? 'en', ['common'])),
+  },
+});
 
 export default GeneratePage; 

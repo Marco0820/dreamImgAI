@@ -105,9 +105,6 @@ class Image(ImageBase):
     class Config:
         from_attributes = True
 
-class SDXLImageGenerate(BaseModel):
-    prompt: str
-
 # Shared Image Schemas
 class SharedImage(BaseModel):
     id: int

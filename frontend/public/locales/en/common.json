@@ -22,7 +22,10 @@
         "generating": "Generating...",
         "generating_in_progress": "Generating image...",
         "no_image_placeholder": "Your generated images will appear here.",
-        "download": "Download"
+        "download": "Download",
+        "promptPlaceholder": "A cinematic shot of a an astronaut riding a horse",
+        "negativePromptPlaceholder": "worst quality, low quality",
+        "highQuality": "High Quality"
     },
     "pricing_page": {
         "title": "Find the perfect plan for you",
@@ -64,5 +67,13 @@
         "loginRequired": "Please log in to choose a plan.",
         "unexpected": "An unexpected error occurred.",
         "generic": "Error"
+    },
+    "hero": {
+        "title": "Create without limits",
+        "subtitle": "Generate stunning visuals with our powerful open-source model. Free, unlimited, and privacy-focused.",
+        "tag_free": "Free",
+        "tag_flux": "Flux",
+        "tag_open_source": "Open Source",
+        "tag_unlimited": "Unlimited"
     }
 } 

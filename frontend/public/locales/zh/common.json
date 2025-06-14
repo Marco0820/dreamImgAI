@@ -36,7 +36,10 @@
         "upgrade_button": "升级到 Ultimate",
         "generating_in_progress": "正在生成图像...",
         "no_image_placeholder": "您生成的图像将显示在这里。",
-        "download": "下载"
+        "download": "下载",
+        "promptPlaceholder": "宇航员骑马的电影镜头",
+        "negativePromptPlaceholder": "最差质量、低质量",
+        "highQuality": "高清"
     },
     "pricing_page": {
         "title": "找到最适合您的计划",
@@ -78,5 +81,13 @@
         "loginRequired": "请登录以选择计划。",
         "unexpected": "发生了未知错误。",
         "generic": "错误"
+    },
+    "hero": {
+        "title": "创作无极限",
+        "subtitle": "使用我们强大的开源模型生成令人惊叹的视觉效果。免费、无限制且注重隐私。",
+        "tag_free": "免费",
+        "tag_flux": "Flux",
+        "tag_open_source": "开源",
+        "tag_unlimited": "无限制"
     }
 } 

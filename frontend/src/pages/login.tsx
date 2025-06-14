@@ -2,8 +2,8 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { loginUser, AuthState } from '@/store/authSlice';
-import { AppDispatch, RootState } from '@/store';
+import { loginUser } from '../store/authSlice';
+import { AppDispatch, RootState } from '../store';
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');

@@ -38,13 +38,14 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
 
     # Database: Will be constructed for production
-    DATABASE_URL: Optional[str] = "postgresql://postgres:lyz919191@localhost:5432/dreamimg_dev?client_encoding=utf8"
+    DATABASE_URL: Optional[str] = "postgresql+psycopg2://postgres:lyz919191@localhost:5432/dreamimg_dev"
     
     # API Keys (can be in .env or secrets manager)
     OPENAI_API_KEY: Optional[str] = None
     GROQ_API_KEY: Optional[str] = None
     STABILITY_API_KEY: Optional[str] = None
     SEGMIND_API_KEY: Optional[str] = None
+    HF_TOKEN: Optional[str] = "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"
 
     # Stripe Settings (can be in .env or secrets manager)
     STRIPE_API_KEY: Optional[str] = None
@@ -90,4 +91,5 @@ if settings.ENVIRONMENT == "production":
     settings.STABILITY_API_KEY = secrets.get("STABILITY_API_KEY", settings.STABILITY_API_KEY)
     settings.SEGMIND_API_KEY = secrets.get("SEGMIND_API_KEY", settings.SEGMIND_API_KEY)
     settings.STRIPE_API_KEY = secrets.get("STRIPE_API_KEY", settings.STRIPE_API_KEY)
-    settings.STRIPE_WEBHOOK_SECRET = secrets.get("STRIPE_WEBHOOK_SECRET", settings.STRIPE_WEBHOOK_SECRET) 
+    settings.STRIPE_WEBHOOK_SECRET = secrets.get("STRIPE_WEBHOOK_SECRET", settings.STRIPE_WEBHOOK_SECRET)
+    settings.HF_TOKEN = secrets.get("HF_TOKEN", settings.HF_TOKEN) 
