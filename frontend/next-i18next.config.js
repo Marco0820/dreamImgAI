@@ -1,21 +1,10 @@
-// @ts-check
+const path = require('path');
 
-/**
- * @type {import('next-i18next').UserConfig}
- */
 module.exports = {
-    i18n: {
-      defaultLocale: 'en',
-      locales: ['en', 'zh'],
-      defaultNS: 'common',
-      ns: ['common'],
-    },
-    /** To avoid issues when deploying to some paas (vercel...) */
-    localePath:
-      typeof window === 'undefined'
-        ? require('path').resolve('./public/locales')
-        : '/locales',
-
-    reloadOnPrerender: process.env.NODE_ENV === 'development',
-    react: { useSuspense: false },
-  }; 
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en', 'zh', 'zh-TW', 'ja', 'ko', 'de', 'fr', 'it', 'es', 'pt', 'hi'],
+  },
+  localePath: path.resolve('./public/locales'),
+  reloadOnPrerender: process.env.NODE_ENV === 'development',
+}; 

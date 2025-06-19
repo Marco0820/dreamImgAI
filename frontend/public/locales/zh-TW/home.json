@@ -1,0 +1,12 @@
+{
+  "hero": {
+    "subtitle": "在幾秒鐘內創建令人驚嘆的 AI 生成圖像",
+    "tagline": "全球首款無限制免費AI圖像生成器"
+  },
+  "featureTags": {
+    "free": "100% 免費",
+    "poweredBy": "由 Flux.1 Dev 提供支援",
+    "noLogin": "無需登入",
+    "unlimited": "無限生成"
+  }
+} 

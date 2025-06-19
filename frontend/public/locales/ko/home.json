@@ -1,0 +1,12 @@
+{
+  "hero": {
+    "subtitle": "몇 초 만에 멋진 AI 생성 이미지 만들기",
+    "tagline": "세계 최초의 무제한 무료 AI 이미지 생성기"
+  },
+  "featureTags": {
+    "free": "100% 무료",
+    "poweredBy": "Flux.1 Dev 제공",
+    "noLogin": "로그인 필요 없음",
+    "unlimited": "무제한 생성"
+  }
+} 

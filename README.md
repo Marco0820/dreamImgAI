@@ -25,3 +25,6 @@ AI 图像生成工具：免费、强大且注重隐私
 Issue 提交：前往 GitHub 仓库（待补充实际仓库地址 ），提交 Issue 描述问题或建议 。
 邮件沟通：发送邮件至lvyuzhen0820@gmail.com ，详细说明相关情况 。
 期待你用这款工具创造出更多精彩的 AI 生成图像，快来开启你的创意之旅吧！
+
+ cd backend; .\\venv\\Scripts\\python.exe -m uvicorn app.main:app --port 8000 --host 0.0.0.0
+  npm run dev

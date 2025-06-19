@@ -1,14 +1,19 @@
-import HeroSection from '../components/landing/HeroSection';
+import { type NextPage, GetStaticProps } from "next";
+import HeroSection from "@/components/landing/HeroSection";
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import FeaturesSection from '../components/landing/FeaturesSection';
 import FaqSection from '../components/landing/FaqSection';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { GetStaticProps } from 'next';
-import { type NextPage } from "next";
+import SDXLGenerator from "@/components/SDXLGenerator";
 
-const Home: NextPage = () => {
+const HomePage: NextPage = () => {
   return (
     <>
-      <HeroSection />
+      <div className="transform -translate-y-2.5">
+        <HeroSection />
+      </div>
+      <div className="-mt-12">
+        <SDXLGenerator />
+      </div>
       <FeaturesSection />
       <FaqSection />
     </>
@@ -17,8 +22,8 @@ const Home: NextPage = () => {
 
 export const getStaticProps: GetStaticProps = async ({ locale }) => ({
   props: {
-    ...(await serverSideTranslations(locale ?? 'en', ['common'])),
+    ...(await serverSideTranslations(locale || 'en', ['common', 'home'])),
   },
 });
 
-export default Home; 
+export default HomePage; 

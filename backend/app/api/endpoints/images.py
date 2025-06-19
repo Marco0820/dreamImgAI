@@ -1,85 +1,157 @@
-import requests
-import base64
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+import logging
+import json
+from fastapi import APIRouter, Body, Depends, HTTPException, Response
+from fastapi.responses import StreamingResponse, JSONResponse
 from sqlalchemy.orm import Session
-from typing import List, Optional
+import base64
+import io
+from PIL import Image
+from io import BytesIO
+import time
+import httpx
 
-from ... import schemas, crud, models, deps
-from ...config import settings
+from tencentcloud.common import credential
+from tencentcloud.common.profile.client_profile import ClientProfile
+from tencentcloud.common.profile.http_profile import HttpProfile
+from tencentcloud.hunyuan.v20230901 import hunyuan_client, models
+from tencentcloud.common.exception.tencent_cloud_sdk_exception import TencentCloudSDKException
+
+from app.core.config import settings
+from app.api import dependencies as deps
+from app.database import get_db
+from app.models.user import User
+import app.schemas as schemas
+import app.crud as crud
 
 router = APIRouter()
 
-@router.post("/generate", status_code=status.HTTP_200_OK)
-async def generate_image(image_data: schemas.ImageGenerate, db: Session = Depends(deps.get_db), current_user: models.User = Depends(deps.get_current_active_user)):
-    """
-    Generate an image using a selected model.
-    """
-    if image_data.model == 'stable-diffusion-xl':
-        API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
-        headers = {
-            "Authorization": f"Bearer {settings.HF_TOKEN}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "inputs": image_data.prompt,
-            "parameters": image_data.parameters or {},
-            "options": {"wait_for_model": True}
-        }
-    elif image_data.model == 'dall-e-3':
-        # Here you would add the logic to call DALL-E 3 API
-        # This is a placeholder and needs actual implementation
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="DALL-E 3 model is not yet implemented."
-        )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unknown model: {image_data.model}"
-        )
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-    try:
-        response = requests.post(API_URL, headers=headers, json=payload)
+async def verify_turnstile(token: str):
+    if not token:
+        raise HTTPException(status_code=400, detail="Turnstile token is missing.")
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+            data={"secret": settings.CLOUDFLARE_TURNSTILE_SECRET_KEY, "response": token},
+        )
+        data = response.json()
+        if not data.get("success"):
+            logger.error(f"Cloudflare Turnstile verification failed: {data.get('error-codes')}")
+            raise HTTPException(status_code=403, detail="Cloudflare Turnstile verification failed.")
 
-        if response.status_code == 200 and response.headers.get("Content-Type") == "image/jpeg":
-            # Save image and record in DB
-            # For simplicity, we are returning the image directly. 
-            # In a real app, you'd save it to a file/cloud storage and store the URL.
-            img_b64 = base64.b64encode(response.content).decode("utf-8")
+def construct_prompt(data: schemas.ImageCreate) -> str:
+    """Constructs a detailed prompt from various style attributes."""
+    parts = [data.prompt]
+    
+    # Mapping style attributes to their string representation if they exist
+    style_map = {
+        'Style': data.style,
+        'Color': data.color,
+        'Lighting': data.lighting,
+        'Composition': data.composition,
+        'Aspect Ratio': data.aspect_ratio,
+    }
+
+    # Add non-empty values to the prompt
+    for key, value in style_map.items():
+        if value:
+            parts.append(f"{value}")
             
-            # Create an entry in the database
-            db_image = crud.create_user_image(
-                db=db,
-                user_id=current_user.id,
-                prompt=image_data.prompt,
-                image_url=f"data:image/jpeg;base64,{img_b64}", # Storing base64 directly for simplicity
-            )
-            
-            return [schemas.Image.from_orm(db_image)] # Return as a list to match frontend
-        else:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"Error from external API: {response.text}"
-            )
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error calling external API: {str(e)}"
-        )
+    return ", ".join(filter(None, parts))
 
-# The old "/generate" endpoint that used local models is now removed.
-
-@router.get("/history", response_model=List[schemas.Image])
-def get_user_image_history(
-    db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_active_user),
-    skip: int = 0,
-    limit: int = 100
+@router.post("/generate/", response_class=JSONResponse, summary="Generate Image")
+async def generate_image(
+    image_in: schemas.ImageCreate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user_optional),
 ):
     """
-    Get the image generation history for the currently logged-in user.
+    Generate an image based on the provided prompt using Tencent Cloud Hunyuan API (Advanced).
+    This endpoint uses an asynchronous job submission and polling mechanism.
     """
-    images = crud.get_user_images(db, user_id=current_user.id, skip=skip, limit=limit)
-    if not images:
-        return []
-    return images 
+    await verify_turnstile(image_in.turnstile_token)
+    try:
+        user_id_for_db = current_user.id if current_user else None
+
+        cred = credential.Credential(settings.TENCENT_SECRET_ID, settings.TENCENT_SECRET_KEY)
+        http_profile = HttpProfile(endpoint="hunyuan.tencentcloudapi.com")
+        client_profile = ClientProfile(httpProfile=http_profile)
+        client = hunyuan_client.HunyuanClient(cred, "ap-guangzhou", client_profile)
+        
+        # Construct the final prompt and parameters for the API call
+        final_prompt = construct_prompt(image_in)
+        
+        params = {
+            "Prompt": final_prompt,
+            "NegativePrompt": image_in.negative_prompt or "",
+            "Style": "Base", # This seems to be a required base style for the API
+            "LogoAdd": 0,
+        }
+        
+        # Add image reference if provided
+        if image_in.image_b64:
+            params["Image"] = image_in.image_b64
+            params["Strength"] = image_in.reference_strength if image_in.reference_strength is not None else 0.5
+
+        submit_req = models.SubmitHunyuanImageChatJobRequest()
+        submit_req.from_json_string(json.dumps(params))
+        
+        submit_resp = client.SubmitHunyuanImageChatJob(submit_req)
+        job_id = submit_resp.JobId
+        logger.info(f"Job submitted successfully. JobId: {job_id}")
+
+        # Polling for Job Result (up to 30 seconds)
+        max_wait_time, start_time = 30, time.time()
+        while time.time() - start_time < max_wait_time:
+            time.sleep(2) # Wait before polling
+            describe_req = models.QueryHunyuanImageChatJobRequest()
+            describe_req.JobId = job_id
+            describe_resp = client.QueryHunyuanImageChatJob(describe_req)
+            
+            job_status_code = describe_resp.JobStatusCode
+            logger.info(f"Polling for job {job_id}. Status: {describe_resp.JobStatusMsg}")
+
+            if job_status_code == "5": # SUCCEED
+                if not describe_resp.ResultImage or not describe_resp.ResultImage[0]:
+                    raise HTTPException(status_code=500, detail="Image generation succeeded but no image URL was returned.")
+
+                image_url = describe_resp.ResultImage[0]
+                
+                crud.image.create_with_owner(
+                    db=db,
+                    prompt=image_in.prompt, 
+                    user_id=user_id_for_db,
+                    image_url=image_url
+                )
+                
+                return JSONResponse(content={"image": image_url})
+
+            elif job_status_code == "4": # FAILED
+                raise HTTPException(status_code=500, detail=f"Image generation job failed: {describe_resp.JobErrorMsg}")
+
+        raise HTTPException(status_code=508, detail="Image generation timed out.")
+
+    except TencentCloudSDKException as e:
+        logger.error(f"A Tencent Cloud SDK error occurred: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+
+async def get_image(image_id: int, db: Session = Depends(get_db)):
+    db_image = crud.image.get(db, id=image_id)
+    if db_image is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+    if not db_image.image_data_b64:
+        raise HTTPException(status_code=404, detail="Image data not available")
+
+    try:
+        image_data = base64.b64decode(db_image.image_data_b64)
+        return Response(content=image_data, media_type="image/png")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error decoding image: {e}")

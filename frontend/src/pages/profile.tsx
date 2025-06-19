@@ -1,36 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../store';
-import { checkUserSession } from '../store/authSlice';
 import { useRouter } from 'next/router';
 import { toast } from 'react-toastify';
+import { GetServerSideProps } from 'next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useSession } from 'next-auth/react';
 
 const ProfilePage = () => {
-    const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
-    const { user, token } = useSelector((state: RootState) => state.auth);
+    const { data: session, status } = useSession();
 
     const [username, setUsername] = useState('');
     const [bio, setBio] = useState('');
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (!token) {
+        if (status === 'unauthenticated') {
             router.push('/login');
-        } else if (!user) {
-            dispatch(checkUserSession());
-        } else {
-            setUsername(user.username || '');
-            setBio(user.bio || '');
+        } else if (status === 'authenticated' && session?.user) {
+            setUsername(session.user.name || '');
+            // Assuming 'bio' is not part of the default session user object.
+            // You might need to extend the session type.
+            setBio(''); 
         }
-    }, [token, user, router, dispatch]);
+    }, [status, session, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
-            // await dispatch(updateUser({ username, bio })).unwrap();
-            toast.success('Profile updated successfully!');
+            // Here you would typically call an API to update the user profile
+            // For now, just show a success toast as an example.
+            toast.success('Profile updated successfully! (Frontend only)');
         } catch (error: any) {
             toast.error(error.message || 'Failed to update profile.');
         } finally {
@@ -38,8 +38,12 @@ const ProfilePage = () => {
         }
     };
     
-    if (!user) {
+    if (status === 'loading') {
         return <div className="text-center p-10">Loading profile...</div>
+    }
+
+    if (status === 'unauthenticated' || !session?.user) {
+        return <div className="text-center p-10">Please log in to view your profile.</div>;
     }
 
     return (
@@ -47,13 +51,13 @@ const ProfilePage = () => {
             <div className="bg-white p-8 rounded-lg shadow-md">
                 <div className="flex items-center space-x-4 mb-6">
                     <img
-                        src={user.avatar || '/default-avatar.png'}
+                        src={session.user.image || '/default-avatar.png'}
                         alt="User Avatar"
                         className="w-24 h-24 rounded-full object-cover"
                     />
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">{user.username}</h1>
-                        <p className="text-gray-400">{user.email}</p>
+                        <h1 className="text-3xl font-bold text-gray-900">{session.user.name}</h1>
+                        <p className="text-gray-400">{session.user.email}</p>
                     </div>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -89,5 +93,11 @@ const ProfilePage = () => {
         </div>
     );
 };
+
+export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
+    props: {
+        ...(await serverSideTranslations(locale ?? 'en', ['common'])),
+    },
+});
 
 export default ProfilePage; 

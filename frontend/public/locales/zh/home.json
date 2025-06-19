@@ -1,0 +1,12 @@
+{
+  "hero": {
+    "subtitle": "让AI图片无限接近于梦想",
+    "tagline": "全球第一款支持Seedream3.0生成隐藏款的AI图片生成器"
+  },
+  "featureTags": {
+    "free": "100% 免费",
+    "poweredBy": "由 Flux.1 Dev 提供支持",
+    "noLogin": "无需登录",
+    "unlimited": "无限生成"
+  }
+} 

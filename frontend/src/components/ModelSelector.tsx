@@ -5,43 +5,71 @@ import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 export interface Model {
   id: string;
   name: string;
+  disabled?: boolean;
 }
 
 interface ModelSelectorProps {
-  models: any[]; // In a real app, this would have a proper type
+  models: Model[];
   selectedModel: string;
-  onModelChange: (model: string) => void;
+  onModelChange: (modelId: string) => void;
+  disabled?: boolean;
 }
 
-// Example models, these would likely come from the API
-const exampleModels = [
-    { id: 'dall-e-3', name: 'DALL·E 3' },
-    { id: 'stable-diffusion-xl-1024-v1-0', name: 'Stable Diffusion XL' },
-    { id: 'midjourney', name: 'Midjourney (Coming Soon)', disabled: true },
-];
+const ModelSelector: React.FC<ModelSelectorProps> = ({ models, selectedModel, onModelChange, disabled = false }) => {
+  const selected = models.find(m => m.id === selectedModel) || models[0];
 
-const ModelSelector: React.FC<ModelSelectorProps> = ({ models, selectedModel, onModelChange }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Select Model</h2>
-      <div className="flex flex-wrap gap-3">
-        {exampleModels.map((model) => (
-          <button
-            key={model.id}
-            onClick={() => !model.disabled && onModelChange(model.id)}
-            disabled={model.disabled}
-            className={`px-5 py-3 rounded-lg font-semibold text-sm transition-all
-              ${selectedModel === model.id 
-                ? 'bg-blue-600 text-white ring-2 ring-offset-2 ring-offset-gray-800 ring-blue-500' 
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'}
-              ${model.disabled ? 'opacity-50 cursor-not-allowed' : ''}
-            `}
-          >
-            {model.name}
-          </button>
-        ))}
+    <Listbox value={selectedModel} onChange={onModelChange} disabled={disabled}>
+      <div className="relative">
+        <Listbox.Button className="relative w-full cursor-default rounded-lg bg-stone-900/80 py-3 pl-4 pr-12 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm border border-stone-700 h-full flex items-center">
+          <span className="block truncate text-base text-stone-200">{selected.name}</span>
+          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+            <ChevronUpDownIcon
+              className="h-5 w-5 text-gray-400"
+              aria-hidden="true"
+            />
+          </span>
+        </Listbox.Button>
+        <Transition
+          as={Fragment}
+          leave="transition ease-in duration-100"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <Listbox.Options className="absolute bottom-full mb-2 w-full overflow-auto rounded-md bg-stone-800 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm border border-stone-700">
+            {models.map((model) => (
+              <Listbox.Option
+                key={model.id}
+                className={({ active }) =>
+                  `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                    active ? 'bg-amber-500/20 text-amber-400' : 'text-gray-200'
+                  } ${model.disabled ? 'opacity-50 cursor-not-allowed' : ''}`
+                }
+                value={model.id}
+                disabled={model.disabled}
+              >
+                {({ selected }) => (
+                  <>
+                    <span
+                      className={`block truncate ${
+                        selected ? 'font-medium text-amber-400' : 'font-normal'
+                      }`}
+                    >
+                      {model.name}
+                    </span>
+                    {selected ? (
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-500">
+                        <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                    ) : null}
+                  </>
+                )}
+              </Listbox.Option>
+            ))}
+          </Listbox.Options>
+        </Transition>
       </div>
-    </div>
+    </Listbox>
   );
 };
 

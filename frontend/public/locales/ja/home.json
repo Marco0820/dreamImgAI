@@ -1,0 +1,13 @@
+{
+  "welcome_message": "DreamImg AI",
+  "hero": {
+    "subtitle": "数秒で素晴らしいAI生成画像を作成",
+    "tagline": "世界初の無制限・無料AI画像ジェネレーター"
+  },
+  "featureTags": {
+    "free": "100% 無料",
+    "poweredBy": "Flux.1 Dev搭載",
+    "noLogin": "ログイン不要",
+    "unlimited": "無制限の生成"
+  }
+} 

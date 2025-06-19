@@ -32,4 +32,19 @@ body {
   background:transparent url(https://www.script-tutorials.com/demos/360/images/twinkling.png) repeat top center;
   z-index:-2;
   animation:move-twink-back 200s linear infinite;
+}
+
+.nav-link:hover {
+  background-color: white;
+  color: black;
+}
+
+button, .btn {
+  border-radius: 9999px !important;
+  /* Add any other "cute" styles you want here, e.g., box-shadow, transitions */
+  transition: all 0.2s ease-in-out;
+}
+
+button:hover, .btn:hover {
+  transform: scale(1.05);
 } 

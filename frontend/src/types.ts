@@ -8,6 +8,13 @@ export interface User {
     stripe_customer_id: string | null;
     created_at: string;
     subscription?: any;
+    name?: string;
+    is_premium?: boolean;
+}
+
+export interface AuthState {
+    user: User | null;
+    token: string | null;
 }
 
 export interface Image {

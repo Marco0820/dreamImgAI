@@ -1,37 +1,23 @@
 import type { AppProps } from 'next/app';
-import { Provider } from 'react-redux';
-import { ToastContainer } from 'react-toastify';
+import { SessionProvider } from 'next-auth/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import store from '../store';
+import { appWithTranslation } from 'next-i18next';
+import nextI18NextConfig from '../../next-i18next.config.js';
 import Layout from '../components/Layout';
 import '../styles/globals.css';
-import 'react-toastify/dist/ReactToastify.css';
-import { appWithTranslation } from 'next-i18next';
 
 const queryClient = new QueryClient();
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <Provider store={store}>
+    <SessionProvider session={pageProps.session}>
       <QueryClientProvider client={queryClient}>
         <Layout>
           <Component {...pageProps} />
         </Layout>
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark"
-        />
       </QueryClientProvider>
-    </Provider>
+    </SessionProvider>
   );
 }
 
-export default appWithTranslation(MyApp);
+export default appWithTranslation(MyApp, nextI18NextConfig);
