@@ -1,0 +1,24 @@
+{
+  "hero": {
+    "subtitle": "Yapay zeka görüntülerini hayallere sonsuz derecede yaklaştırın",
+    "tagline": "Dünyanın ilk ücretsiz çok modelli yapay zeka görüntü oluşturucusu"
+  },
+  "featureTags": {
+    "free": {
+      "title": "Sınırsız Gerçekçilik",
+      "description": "Resim dokusunun gerçek rekonstrüksiyonu ve duygusal ifadenin nihai hizalanması"
+    },
+    "poweredBy": {
+      "title": "Çoklu Modeller",
+      "description": "Flux tam serisi çoklu modeller ömür boyu ücretsizdir"
+    },
+    "noLogin": {
+      "title": "Dünyada İlk",
+      "description": "Seedream3.0 gizli görüntülerin oluşturulmasını destekler"
+    },
+    "unlimited": {
+      "title": "Özel Telif Hakkı",
+      "description": "Ücretsiz ticari uygulama"
+    }
+  }
+} 

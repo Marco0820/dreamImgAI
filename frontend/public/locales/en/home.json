@@ -1,13 +1,24 @@
 {
-  "welcome_message": "DreamImg AI",
   "hero": {
-    "subtitle": "Create stunning AI-generated images in seconds",
+    "subtitle": "Make AI images infinitely close to dreams",
     "tagline": "The world's first free multi-model AI image generator"
   },
   "featureTags": {
-    "free": "100% Free",
-    "poweredBy": "Powered by Flux+Seedream",
-    "noLogin": "No Login Required",
-    "unlimited": "Unlimited Generations"
+    "free": {
+      "title": "Unlimited Realism",
+      "description": "True reconstruction of picture texture and ultimate alignment of emotional expression"
+    },
+    "poweredBy": {
+      "title": "Multiple Models",
+      "description": "Flux full series of multi-models are free for life"
+    },
+    "noLogin": {
+      "title": "World's First",
+      "description": "Seedream3.0 supports generating hidden images"
+    },
+    "unlimited": {
+      "title": "Exclusive Copyright",
+      "description": "Free commercial application"
+    }
   }
-} 
+}

@@ -7,12 +7,13 @@ import { useTranslation } from 'next-i18next';
 const HeroSection = () => {
   const { t } = useTranslation('home');
 
-  const featureTags = [
-    { text: t('featureTags.free'), color: 'border-yellow-600/50 text-yellow-300 bg-yellow-900/20 hover:bg-yellow-900/40' },
-    { text: t('featureTags.poweredBy'), color: 'border-teal-600/50 text-teal-300 bg-teal-900/20 hover:bg-teal-900/40' },
-    { text: t('featureTags.noLogin'), color: 'border-indigo-600/50 text-indigo-300 bg-indigo-900/20 hover:bg-indigo-900/40' },
-    { text: t('featureTags.unlimited'), color: 'border-purple-600/50 text-purple-300 bg-purple-900/20 hover:bg-purple-900/40' },
-  ];
+  const featureTagKeys = ['free', 'poweredBy', 'noLogin', 'unlimited'];
+  const featureTagColors = {
+    free: 'border-yellow-600/50 text-yellow-300 bg-yellow-900/20 hover:bg-yellow-900/40',
+    poweredBy: 'border-teal-600/50 text-teal-300 bg-teal-900/20 hover:bg-teal-900/40',
+    noLogin: 'border-indigo-600/50 text-indigo-300 bg-indigo-900/20 hover:bg-indigo-900/40',
+    unlimited: 'border-purple-600/50 text-purple-300 bg-purple-900/20 hover:bg-purple-900/40',
+  };
 
   return (
     <section className="py-20 text-center">
@@ -36,15 +37,16 @@ const HeroSection = () => {
             ✨ {t('hero.tagline')} ✨
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            {featureTags.map((tag, index) => {
-              const [title, description] = tag.text.split('——');
+            {featureTagKeys.map((key, index) => {
+              const title = t(`featureTags.${key}.title`);
+              const description = t(`featureTags.${key}.description`);
               return (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
-                  className={`px-6 py-3 rounded-full border text-center transition-all duration-300 ${tag.color}`}
+                  className={`px-6 py-3 rounded-full border text-center transition-all duration-300 ${featureTagColors[key]}`}
                 >
                   <div className="flex flex-col items-center">
                     <span className="font-semibold">{title}</span>

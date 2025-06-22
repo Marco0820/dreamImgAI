@@ -1,0 +1,24 @@
+{
+  "hero": {
+    "subtitle": "Jadikan gambar AI sangat dekat dengan mimpi",
+    "tagline": "Generator gambar AI multi-model gratis pertama di dunia"
+  },
+  "featureTags": {
+    "free": {
+      "title": "Realisme Tanpa Batas",
+      "description": "Rekonstruksi sejati tekstur gambar dan penyelarasan utama ekspresi emosional"
+    },
+    "poweredBy": {
+      "title": "Beberapa Model",
+      "description": "Seri lengkap multi-model Flux gratis seumur hidup"
+    },
+    "noLogin": {
+      "title": "Pertama di Dunia",
+      "description": "Seedream3.0 mendukung pembuatan gambar tersembunyi"
+    },
+    "unlimited": {
+      "title": "Hak Cipta Eksklusif",
+      "description": "Aplikasi komersial gratis"
+    }
+  }
+} 

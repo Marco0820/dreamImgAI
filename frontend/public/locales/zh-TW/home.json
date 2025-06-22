@@ -1,12 +1,24 @@
 {
   "hero": {
-    "subtitle": "在幾秒鐘內創建令人驚嘆的 AI 生成圖像",
-    "tagline": "全球首款無限制免費AI圖像生成器"
+    "subtitle": "讓AI圖片無限接近於夢想",
+    "tagline": "全球第一款免費的多模型AI圖片生成器"
   },
   "featureTags": {
-    "free": "100% 免費",
-    "poweredBy": "由 Flux.1 Dev 提供支援",
-    "noLogin": "無需登入",
-    "unlimited": "無限生成"
+    "free": {
+      "title": "無限逼真",
+      "description": "畫面質感的真實重塑與情緒表達的極致對齊"
+    },
+    "poweredBy": {
+      "title": "多種模型",
+      "description": "Flux全系列多模型終身免費"
+    },
+    "noLogin": {
+      "title": "全球第一",
+      "description": "Seedream3.0支援生成隱藏款圖片"
+    },
+    "unlimited": {
+      "title": "獨家版權",
+      "description": "免費商業應用"
+    }
   }
 } 

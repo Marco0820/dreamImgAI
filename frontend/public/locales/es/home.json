@@ -1,12 +1,24 @@
 {
   "hero": {
-    "subtitle": "Crea impresionantes imágenes generadas por IA en segundos",
-    "tagline": "El primer generador de imágenes de IA gratuito e ilimitado del mundo"
+    "subtitle": "Hacer que las imágenes de IA se acerquen infinitamente a los sueños",
+    "tagline": "El primer generador de imágenes de IA multi-modelo gratuito del mundo"
   },
   "featureTags": {
-    "free": "100% Gratis",
-    "poweredBy": "Con tecnología de Flux.1 Dev",
-    "noLogin": "No se requiere inicio de sesión",
-    "unlimited": "Generaciones ilimitadas"
+    "free": {
+      "title": "Realismo ilimitado",
+      "description": "Reconstrucción real de la textura de la imagen y alineación definitiva de la expresión emocional"
+    },
+    "poweredBy": {
+      "title": "Múltiples modelos",
+      "description": "La serie completa de multi-modelos de Flux es gratuita de por vida"
+    },
+    "noLogin": {
+      "title": "Primero en el mundo",
+      "description": "Seedream3.0 admite la generación de imágenes ocultas"
+    },
+    "unlimited": {
+      "title": "Copyright exclusivo",
+      "description": "Aplicación comercial gratuita"
+    }
   }
 } 

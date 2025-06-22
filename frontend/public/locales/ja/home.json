@@ -1,13 +1,24 @@
 {
-  "welcome_message": "DreamImg AI",
   "hero": {
-    "subtitle": "数秒で素晴らしいAI生成画像を作成",
-    "tagline": "世界初の無制限・無料AI画像ジェネレーター"
+    "subtitle": "AI画像を無限に夢に近づける",
+    "tagline": "世界初の無料マルチモデルAI画像ジェネレーター"
   },
   "featureTags": {
-    "free": "100% 無料",
-    "poweredBy": "Flux.1 Dev搭載",
-    "noLogin": "ログイン不要",
-    "unlimited": "無制限の生成"
+    "free": {
+      "title": "無限のリアリズム",
+      "description": "絵の質感の忠実な再現と感情表現の究極の調和"
+    },
+    "poweredBy": {
+      "title": "複数のモデル",
+      "description": "Fluxの全シリーズのマルチモデルは生涯無料"
+    },
+    "noLogin": {
+      "title": "世界初",
+      "description": "Seedream3.0は隠し画像の生成をサポート"
+    },
+    "unlimited": {
+      "title": "独占著作権",
+      "description": "無料の商用利用"
+    }
   }
 } 

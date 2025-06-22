@@ -1,0 +1,24 @@
+{
+  "hero": {
+    "subtitle": "Làm cho hình ảnh AI gần vô hạn với những giấc mơ",
+    "tagline": "Trình tạo hình ảnh AI đa mô hình miễn phí đầu tiên trên thế giới"
+  },
+  "featureTags": {
+    "free": {
+      "title": "Chủ nghĩa hiện thực không giới hạn",
+      "description": "Tái tạo chân thực kết cấu hình ảnh và sự liên kết cuối cùng của biểu hiện cảm xúc"
+    },
+    "poweredBy": {
+      "title": "Nhiều mô hình",
+      "description": "Toàn bộ chuỗi đa mô hình của Flux được miễn phí suốt đời"
+    },
+    "noLogin": {
+      "title": "Đầu tiên trên thế giới",
+      "description": "Seedream3.0 hỗ trợ tạo hình ảnh ẩn"
+    },
+    "unlimited": {
+      "title": "Bản quyền độc quyền",
+      "description": "Ứng dụng thương mại miễn phí"
+    }
+  }
+} 

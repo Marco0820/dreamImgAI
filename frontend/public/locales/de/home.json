@@ -1,12 +1,24 @@
 {
   "hero": {
-    "subtitle": "Erstellen Sie in Sekunden beeindruckende KI-generierte Bilder",
-    "tagline": "Der weltweit erste unbegrenzte kostenlose KI-Bildgenerator"
+    "subtitle": "KI-Bilder unendlich nah an Träume bringen",
+    "tagline": "Der weltweit erste kostenlose Multi-Modell-KI-Bildgenerator"
   },
   "featureTags": {
-    "free": "100% Kostenlos",
-    "poweredBy": "Angetrieben von Flux.1 Dev",
-    "noLogin": "Keine Anmeldung erforderlich",
-    "unlimited": "Unbegrenzte Generierungen"
+    "free": {
+      "title": "Unbegrenzter Realismus",
+      "description": "Echte Rekonstruktion der Bildtextur und ultimative Ausrichtung des emotionalen Ausdrucks"
+    },
+    "poweredBy": {
+      "title": "Mehrere Modelle",
+      "description": "Die gesamte Flux-Serie von Multi-Modellen ist lebenslang kostenlos"
+    },
+    "noLogin": {
+      "title": "Weltweit Erster",
+      "description": "Seedream3.0 unterstützt die Erzeugung versteckter Bilder"
+    },
+    "unlimited": {
+      "title": "Exklusives Urheberrecht",
+      "description": "Kostenlose kommerzielle Anwendung"
+    }
   }
 } 

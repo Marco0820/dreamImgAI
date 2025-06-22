@@ -4,9 +4,21 @@
     "tagline": "全球第一款免费的多模型AI图片生成器"
   },
   "featureTags": {
-    "free": "无限逼真——画面真实重塑与情绪极致表达",
-    "poweredBy": "多种模型——Flux全系列多模型终身免费",
-    "noLogin": "全球第一——Seedream3.0生成隐藏款图片",
-    "unlimited": "独家版权——免费商业应用"
+    "free": {
+      "title": "无限逼真",
+      "description": "画面质感的真实重塑与情绪表达的极致对齐"
+    },
+    "poweredBy": {
+      "title": "多种模型",
+      "description": "Flux全系列多模型终身免费"
+    },
+    "noLogin": {
+      "title": "全球第一",
+      "description": "Seedream3.0支持生成隐藏款图片"
+    },
+    "unlimited": {
+      "title": "独家版权",
+      "description": "免费商业应用"
+    }
   }
 } 
