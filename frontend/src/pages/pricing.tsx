@@ -44,10 +44,25 @@ const PricingPage = () => {
       <div className="text-center">
         <h1 className="text-4xl md:text-5xl font-bold">{t('pricing_title')}</h1>
         <p className="mt-4 text-lg text-gray-400">{t('pricing_subtitle')}</p>
-        <div className="flex items-center justify-center space-x-4 mt-8">
-          <Label htmlFor="billing-cycle">{t('pricing_monthly')}</Label>
-          <Switch id="billing-cycle" checked={isYearly} onCheckedChange={setIsYearly} />
-          <Label htmlFor="billing-cycle">{t('pricing_yearly')} <span className="text-yellow-400">({t('pricing_yearly_save')})</span></Label>
+        <div className="flex items-center justify-center mt-8">
+          <div className="flex items-center justify-center p-1 rounded-full bg-stone-800/60">
+            <Button
+              onClick={() => setIsYearly(false)}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+                !isYearly ? 'bg-amber-400 text-stone-900' : 'bg-transparent text-white hover:bg-stone-700/50'
+              }`}
+            >
+              {t('pricing_monthly')}
+            </Button>
+            <Button
+              onClick={() => setIsYearly(true)}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+                isYearly ? 'bg-amber-400 text-stone-900' : 'bg-transparent text-white hover:bg-stone-700/50'
+              }`}
+            >
+              {t('pricing_yearly')} <span className="hidden md:inline">({t('pricing_yearly_save')})</span>
+            </Button>
+          </div>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">

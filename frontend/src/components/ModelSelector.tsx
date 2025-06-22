@@ -1,11 +1,13 @@
 import React, { Fragment } from 'react';
 import { Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
+import { Star } from 'lucide-react';
 
 export interface Model {
   id: string;
   name: string;
   disabled?: boolean;
+  paid?: boolean;
 }
 
 interface ModelSelectorProps {
@@ -22,7 +24,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ models, selectedModel, on
     <Listbox value={selectedModel} onChange={onModelChange} disabled={disabled}>
       <div className="relative">
         <Listbox.Button className="relative w-full cursor-default rounded-lg bg-stone-900/80 py-3 pl-4 pr-12 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm border border-stone-700 h-full flex items-center">
-          <span className="block truncate text-base text-stone-200">{selected.name}</span>
+          <span className="block text-base text-stone-200">{selected.name}</span>
           <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
             <ChevronUpDownIcon
               className="h-5 w-5 text-gray-400"
@@ -51,11 +53,14 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ models, selectedModel, on
                 {({ selected }) => (
                   <>
                     <span
-                      className={`block truncate ${
+                      className={`flex items-center truncate ${
                         selected ? 'font-medium text-amber-400' : 'font-normal'
                       }`}
                     >
                       {model.name}
+                      {model.paid && (
+                        <Star className="w-4 h-4 ml-2 fill-amber-400 text-amber-400" />
+                      )}
                     </span>
                     {selected ? (
                       <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-500">

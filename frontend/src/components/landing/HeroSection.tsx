@@ -35,12 +35,24 @@ const HeroSection = () => {
           <p className="mt-4 text-lg text-yellow-500 max-w-2xl mx-auto">
             ✨ {t('hero.tagline')} ✨
           </p>
-          <div className="mt-2 flex justify-center items-center flex-wrap gap-3">
-            {featureTags.map((tag, index) => (
-              <span key={index} className={`px-4 py-2 text-sm font-medium rounded-full border transition-colors ${tag.color}`}>
-                {tag.text}
-              </span>
-            ))}
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
+            {featureTags.map((tag, index) => {
+              const [title, description] = tag.text.split('——');
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
+                  className={`px-6 py-3 rounded-full border text-center transition-all duration-300 ${tag.color}`}
+                >
+                  <div className="flex flex-col items-center">
+                    <span className="font-semibold">{title}</span>
+                    {description && <span className="text-sm opacity-80">{description}</span>}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
       </div>

@@ -25,6 +25,9 @@ import { Slider } from "@/components/ui/slider"
 import { Turnstile } from '@marsidev/react-turnstile';
 import { aspectRatios, styles, colors, lightings, compositions, inspirationPrompts } from '@/data/styleOptions';
 import ModelSelector, { Model } from './ModelSelector';
+import axios from 'axios';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/router';
 
 const randomPrompts = [
   "A majestic dragon soaring through a storm, lightning illuminates its scales, hyper-detailed, fantasy art.",
@@ -70,8 +73,10 @@ const randomPrompts = [
 ];
 
 const availableModels: Model[] = [
-  { id: 'flux-dev', name: 'Flux.1 Dev' },
-  { id: 'seedream3', name: 'Seedream3.0' },
+  { id: 'tt-flux1-schnell', name: 'Flux.1 Dev (Schnell)', paid: false },
+  { id: 'flux1-dev', name: 'Flux.1 Dev (Original)', paid: false },
+  { id: 'tt-flux1-pro', name: 'Flux.1 Pro', paid: true },
+  { id: 'seedream3', name: 'Seedream3.0', paid: true },
 ];
 
 // Helper to convert file to Base64
@@ -94,15 +99,48 @@ type HistoryImage = {
   timestamp: number;
 };
 
+const pollForImage = async (jobId: string): Promise<string> => {
+  const pollStartTime = Date.now();
+  const pollTimeout = 180000; // 3 minutes
+  const pollInterval = 5000; // 5 seconds
+
+  while (Date.now() - pollStartTime < pollTimeout) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+      try {
+          const fetchResponse = await axios.post('/api/ttapi/flux/fetch', { jobId });
+          const fetchData = fetchResponse.data;
+
+          if (fetchData.status === 'SUCCESS' && fetchData.data.imageUrl) {
+              return fetchData.data.imageUrl;
+          } else if (fetchData.status === 'FAILED') {
+              throw new Error(fetchData.message || 'Image generation failed at ttapi.io');
+          }
+          // If status is PENDING or other, continue polling.
+      } catch (error) {
+          console.error('Polling failed:', error);
+          // We can decide to throw or continue polling, for now, we let it continue until timeout.
+      }
+  }
+
+  throw new Error('Image generation timed out.');
+};
+
 const SDXLGenerator = () => {
   const { t } = useTranslation('common');
   const { data: session } = useSession();
+  const router = useRouter();
   
   const promptFromHome = usePromptStore((state) => state.prompt);
   const [prompt, setPrompt] = useState(promptFromHome || '');
   
   useEffect(() => {
-    if (promptFromHome) setPrompt(promptFromHome);
+    const savedPrompt = sessionStorage.getItem('promptBeforeLogin');
+    if (savedPrompt) {
+      setPrompt(savedPrompt);
+      sessionStorage.removeItem('promptBeforeLogin');
+    } else if (promptFromHome) {
+      setPrompt(promptFromHome);
+    }
   }, [promptFromHome]);
 
   const [negativePrompt, setNegativePrompt] = useState('');
@@ -151,9 +189,37 @@ const SDXLGenerator = () => {
   const turnstileSiteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
   const isTurnstileMisconfigured = !turnstileSiteKey || turnstileSiteKey === 'YOUR_TURNSTILE_SITE_KEY';
 
+  interface StyleOption {
+    value: string;
+    label: string;
+  }
+
+  const handleModelChange = (modelId: string) => {
+    const model = availableModels.find(m => m.id === modelId);
+    if (model?.paid && session?.user?.creemPriceId !== 'price_ultimate') {
+      toast.info(t('generator.upgrade_required_for_model'));
+      router.push('/pricing');
+    }
+    setSelectedModel(modelId);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const model = availableModels.find(m => m.id === selectedModel);
+    if (model?.paid && session?.user?.creemPriceId !== 'price_ultimate') {
+        toast.info(t('generator.upgrade_required_for_model'));
+        router.push('/pricing');
+        return;
+    }
+
+    if (!session) {
+      toast.info(t('generator.login_required'));
+      sessionStorage.setItem('promptBeforeLogin', prompt);
+      signIn(undefined, { callbackUrl: window.location.pathname });
+      return;
+    }
+
     if (!prompt.trim()) {
       toast.error(t('generator.promptRequired'));
       return;
@@ -170,7 +236,7 @@ const SDXLGenerator = () => {
     }
 
     setIsGenerating(true);
-    setGeneratedImages(Array(3).fill({ status: 'loading' }));
+    setGeneratedImages(Array(4).fill({ status: 'loading' }));
 
     let image_b64 = null;
     if (uploadedImage.file) {
@@ -184,39 +250,60 @@ const SDXLGenerator = () => {
       }
     }
 
+    const selectedAspectRatio = aspectRatios.find(ar => ar.value === aspectRatio) || aspectRatios[0];
+
+    const enhancedPromptParts = [prompt];
+    if (style) enhancedPromptParts.push(style);
+    if (color) enhancedPromptParts.push(color);
+    if (lighting) enhancedPromptParts.push(lighting);
+    if (composition) enhancedPromptParts.push(composition);
+    const enhancedPrompt = enhancedPromptParts.join(', ');
+
     const requestBody = {
-      prompt,
+      prompt: enhancedPrompt,
       negative_prompt: showNegativePrompt ? negativePrompt : '',
-      aspect_ratio: aspectRatio,
+      width: selectedAspectRatio.width,
+      height: selectedAspectRatio.height,
       style: style,
       color: color,
-      composition: composition,
       lighting: lighting,
+      composition: composition,
       image_b64,
       reference_strength: image_b64 ? referenceStrength / 100 : undefined,
       turnstile_token: turnstileToken,
     };
     
+    const generateCount = 4;
     const generateSequentially = async () => {
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < generateCount; i++) {
         try {
-          const endpoint = selectedModel === 'flux-dev' ? '/api/horde/generate' : '/api/generate-image';
+          let imageUrl: string;
 
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...requestBody, num_outputs: 1 }),
-          });
+          if (selectedModel.includes('flux')) {
+            const generateResponse = await axios.post('/api/ttapi/flux/generate', {
+                ...requestBody,
+                model: selectedModel, 
+                size: `${selectedAspectRatio.width}x${selectedAspectRatio.height}`,
+            });
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Image generation failed');
+            const jobId = generateResponse.data?.data?.jobId;
+            if (!jobId) {
+                throw new Error('Failed to get job ID from ttapi.io');
+            }
+            imageUrl = await pollForImage(jobId);
+          } else {
+            let endpoint = '/api/horde/generate';
+            if (selectedModel === 'seedream3') {
+              endpoint = '/api/volcano/generate';
+            }
+  
+            const response = await axios.post(endpoint, requestBody);
+            imageUrl = response.data.image;
           }
-          const data = await response.json();
           
           // Add to history
           const newHistoryImage: HistoryImage = {
-            url: data.image,
+            url: imageUrl,
             prompt: requestBody.prompt,
             timestamp: Date.now()
           };
@@ -233,7 +320,7 @@ const SDXLGenerator = () => {
           
           setGeneratedImages(currentImages => {
               const newImages = [...currentImages];
-              newImages[i] = { status: 'done', url: data.image };
+              newImages[i] = { status: 'done', url: imageUrl };
               return newImages;
           });
 
@@ -251,6 +338,10 @@ const SDXLGenerator = () => {
     }
 
     generateSequentially();
+
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
+    }
   };
 
   const handleDownload = (url: string) => {
@@ -304,28 +395,28 @@ const SDXLGenerator = () => {
     }
   };
 
-  const StylePopover = ({ label, options, selectedValue, onSelect, multiColumn=true }: any) => {
-    const selectedLabel = options.find((o: any) => o.value === selectedValue)?.label || label;
-
+  const StylePopover = ({ label, options, selectedValue, onSelect, multiColumn = true }: { label: string; options: StyleOption[]; selectedValue: string | null; onSelect: (value: string) => void; multiColumn?: boolean }) => {
+    const { t } = useTranslation('common');
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="flex-grow justify-between bg-stone-900/50 border-stone-700 hover:bg-stone-800 text-white">
-            <span>{String(t(selectedLabel, label))}</span><ChevronDown />
+          <Button variant="outline" className="w-full justify-between px-3">
+            <span className="truncate">{selectedValue ? t(options.find(o => o.value === selectedValue)?.label || label) : t(label)}</span>
+            <ChevronDown className="h-4 w-4 flex-shrink-0" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 bg-stone-800 border-stone-700 p-2 text-white">
-          <div className={multiColumn ? "grid grid-cols-4 gap-1" : "flex flex-col space-y-1"}>
-            {options.map((o: any) => 
+        <PopoverContent className={`w-[280px] p-1 ${multiColumn ? 'md:w-[420px]' : ''} bg-stone-900 border border-stone-700`}>
+          <div className={`grid ${multiColumn ? 'grid-cols-3 md:grid-cols-3' : 'grid-cols-1'} gap-1`}>
+            {options.map((option) => (
               <Button
-                variant={selectedValue === o.value ? "secondary" : "ghost"}
-                key={o.label}
-                onClick={() => onSelect(o.value)}
-                className="h-auto p-2 flex flex-col gap-1 text-xs hover:bg-stone-700 text-white"
+                key={option.value}
+                variant={selectedValue === option.value ? 'secondary' : 'ghost'}
+                onClick={() => onSelect(option.value)}
+                className="w-full justify-start text-xs h-8 px-2 text-white hover:bg-amber-500"
               >
-                {String(t(o.label, o.label))}
+                {t(option.label)}
               </Button>
-            )}
+            ))}
           </div>
         </PopoverContent>
       </Popover>
@@ -397,29 +488,37 @@ const SDXLGenerator = () => {
                       </div>
                     </div>
                   )}
-                  <Textarea
-                    id="prompt"
-                    value={prompt}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPrompt(e.target.value)}
-                    placeholder={t('prompt_placeholder')}
-                    className="w-full bg-stone-900/50 border-2 border-stone-700 rounded-lg p-4 text-white placeholder-stone-500 focus:ring-2 focus:ring-amber-600 focus:border-amber-600 focus:outline-none transition h-auto min-h-[150px] resize-none text-base"
-                  />
+                  <div className="flex-grow">
+                    <Textarea
+                      placeholder={t('enter your dream...')}
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      className="h-24 resize-none"
+                      maxLength={1000}
+                    />
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-xs text-stone-400">{prompt.length} / 1000</span>
+                    </div>
+                  </div>                  
                 </div>
               </div>
 
               {showNegativePrompt && (
-                <div className="space-y-2">
-                  <Label htmlFor="negative-prompt" className="font-medium text-stone-300">
-                    {t('negative_prompt_label', '负面提示词')}
-                  </Label>
+                <motion.div 
+                  className="grid gap-2"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
                   <Textarea
-                    id="negative-prompt"
+                    placeholder={t('generator.negative_prompt_placeholder')}
                     value={negativePrompt}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNegativePrompt(e.target.value)}
-                    placeholder={t('negative_prompt_placeholder', '您想避免什么？')}
-                    className="w-full bg-stone-900/50 border-2 border-stone-700 rounded-lg p-4 text-white placeholder-stone-500 focus:ring-2 focus:ring-amber-600 focus:border-amber-600 focus:outline-none transition h-24 resize-none text-base"
+                    onChange={(e) => setNegativePrompt(e.target.value)}
+                    className="h-24 resize-none"
+                    maxLength={1000}
                   />
-                </div>
+                </motion.div>
               )}
 
               <div className="space-y-4">
@@ -469,7 +568,7 @@ const SDXLGenerator = () => {
                   <ModelSelector
                     models={availableModels}
                     selectedModel={selectedModel}
-                    onModelChange={setSelectedModel}
+                    onModelChange={handleModelChange}
                     disabled={isGenerating}
                   />
                   <Button 
@@ -485,55 +584,72 @@ const SDXLGenerator = () => {
             </form>
 
             {/* --- Image Output --- */}
-            {(isGenerating || generatedImages.length > 0) && (
-              <div className="mt-10">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {generatedImages.map((image, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                      className="relative group aspect-square bg-stone-800/40 rounded-lg flex items-center justify-center border border-stone-700"
-                    >
-                      {image.status === 'loading' && (
-                        <div className="flex flex-col items-center justify-center text-center p-4">
-                          <Loader2 className="h-8 w-8 animate-spin text-stone-500 mb-4" />
-                          <p className="text-stone-300 font-semibold">{t('generating_estimate', '预计20s完成图片创作')}</p>
-                          <p className="text-stone-400 text-sm mb-4">{t('generating_masterpiece', '正在生成您的杰作...')}</p>
-                          <Button
-                            size="sm"
-                            className="bg-amber-500 hover:bg-amber-600 text-white"
-                            onClick={() => window.open('/pricing', '_blank')}
-                          >
-                            <Sparkles className="h-4 w-4 mr-2"/>
-                            {t('increase_speed_10x', '提高10倍生成速度')}
+            {isGenerating && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+                {generatedImages.map((image, index) => (
+                  <div key={index} className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center relative">
+                    {image.status === 'loading' && (
+                      <div className="flex flex-col items-center justify-center text-center p-4">
+                        <Loader2 className="h-8 w-8 animate-spin text-stone-500 mb-4" />
+                        <p className="text-stone-300 font-semibold">{t('generating_estimate', '预计20s完成图片创作')}</p>
+                        <p className="text-stone-400 text-sm mb-4">{t('generating_masterpiece', '正在生成您的杰作...')}</p>
+                        <Button
+                          size="sm"
+                          className="bg-amber-500 hover:bg-amber-600 text-white"
+                          onClick={() => window.open('/pricing', '_blank')}
+                        >
+                          <Sparkles className="h-4 w-4 mr-2"/>
+                          {t('increase_speed_10x', '提高10倍生成速度')}
+                        </Button>
+                      </div>
+                    )}
+                    {image.status === 'done' && image.url && (
+                      <>
+                        <img
+                          src={image.url}
+                          alt={`${t('generator.alt_text_prefix', 'Generated image')} ${index + 1}`}
+                          className="object-cover w-full h-full rounded-lg cursor-pointer"
+                          onClick={() => handleOpenPreview(image.url!)}
+                        />
+                        <div className="absolute bottom-2 right-2 transition-opacity">
+                          <Button size="icon" variant="secondary" onClick={(e) => { e.stopPropagation(); handleDownload(image.url!); }}>
+                            <Download className="h-5 w-5" />
                           </Button>
                         </div>
-                      )}
-                      {image.status === 'done' && image.url && (
-                        <>
-                          <img
-                            src={image.url}
-                            alt={`${t('generator.alt_text_prefix', 'Generated image')} ${index + 1}`}
-                            className="object-cover w-full h-full rounded-lg cursor-pointer"
-                            onClick={() => handleOpenPreview(image.url!)}
-                          />
-                          <div className="absolute bottom-2 right-2 transition-opacity">
-                            <Button size="icon" variant="secondary" onClick={(e) => { e.stopPropagation(); handleDownload(image.url!); }}>
-                              <Download className="h-5 w-5" />
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                      {image.status === 'error' && (
-                        <div className="flex flex-col items-center text-center p-4">
-                          <X className="h-8 w-8 text-red-500 mb-4" />
-                          <p className="text-red-400">{t('generator.generation_failed', 'Generation failed')}</p>
-                          <p className="text-stone-400 text-xs">{image.error}</p>
+                      </>
+                    )}
+                    {image.status === 'error' && (
+                      <div className="flex flex-col items-center text-center p-4">
+                        <X className="h-8 w-8 text-red-500 mb-4" />
+                        <p className="text-red-400">{t('generator.generation_failed', 'Generation failed')}</p>
+                        <p className="text-stone-400 text-xs">{image.error}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!isGenerating && generatedImages.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-xl font-semibold mb-4 text-center">{t('generator.results')}</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {generatedImages.map((image, index) => (
+                    image.status === 'done' && image.url && (
+                      <div key={index} className="group relative">
+                        <img
+                          src={image.url}
+                          alt={`${t('generator.alt_text_prefix', 'Generated image')} ${index + 1}`}
+                          className="object-cover w-full h-full rounded-lg cursor-pointer"
+                          onClick={() => handleOpenPreview(image.url!)}
+                        />
+                        <div className="absolute bottom-2 right-2 transition-opacity">
+                          <Button size="icon" variant="secondary" onClick={(e) => { e.stopPropagation(); handleDownload(image.url!); }}>
+                            <Download className="h-5 w-5" />
+                          </Button>
                         </div>
-                      )}
-                    </motion.div>
+                      </div>
+                    )
                   ))}
                 </div>
               </div>
@@ -545,29 +661,25 @@ const SDXLGenerator = () => {
       {/* --- Inspiration Section --- */}
       <section id="inspiration" className="py-10 bg-gray-900/50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-white mb-2">
-            {t('inspiration_title')}
-          </h2>
-          <p className="text-lg text-gray-400 text-center mb-10">
-            {t('inspiration_subtitle')}
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {inspirationPrompts.map((item) => (
-              <motion.div
-                key={item.image}
-                className="rounded-lg overflow-hidden shadow-lg group hover:shadow-2xl transition-shadow duration-300 aspect-square cursor-pointer"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                onClick={() => handleInspirationClick(item.prompt)}
-              >
-                <img
-                  src={`/images/${item.image}`}
-                  alt={item.prompt.substring(0, 50) + '...'}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </motion.div>
-            ))}
+          <div className="mt-12">
+            <h3 className="text-2xl font-bold text-center text-stone-200 mb-2">{t('inspiration_title')}</h3>
+            <p className="text-center text-stone-400 mb-6">{t('inspiration_subtitle')}</p>
+            <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+              {inspirationPrompts.map((p, index) => (
+                <motion.div
+                  key={index}
+                  className="relative rounded-lg overflow-hidden group cursor-pointer break-inside-avoid"
+                  onClick={() => handleInspirationClick(p.prompt)}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <img src={`/images/${p.image}`} alt={`Inspiration image ${index + 1}`} className="w-full h-auto rounded-lg"/>
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2">
+                    <p className="text-white text-xs text-center">{p.prompt.substring(0, 100)}...</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

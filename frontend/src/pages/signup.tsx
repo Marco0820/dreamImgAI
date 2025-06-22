@@ -14,6 +14,7 @@ const SignupPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const router = useRouter();
+    const { t } = useTranslation();
 
     const handleSignup = async (e: FormEvent) => {
         e.preventDefault();
@@ -67,8 +68,12 @@ const SignupPage = () => {
                             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} className="w-full px-3 py-2 mt-1 text-white bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </div>
                         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? 'Creating account...' : 'Sign Up'}
+                        <Button 
+                          type="submit" 
+                          className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold py-3"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? t('registering', 'Registering...') : t('signup', 'Sign Up')}
                         </Button>
                     </form>
                 )}

@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
 
-const HORDE_API_KEY = 'q05cxWunYp-8ySiHSECsSw';
 const HORDE_API_URL = 'https://stablehorde.net/api/v2';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -11,25 +10,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
-    const { prompt, negative_prompt, aspect_ratio } = req.body;
+    const { prompt, negative_prompt, width, height } = req.body;
 
     if (!prompt) {
         return res.status(400).json({ message: 'Prompt is required' });
-    }
-
-    // Restore high-quality resolutions and steps
-    let width = 1024;
-    let height = 1024;
-    if (aspect_ratio === "1:1") {
-        width = 1024; height = 1024;
-    } else if (aspect_ratio === "16:9") {
-        width = 1344; height = 768;
-    } else if (aspect_ratio === "9:16") {
-        width = 768; height = 1344;
-    } else if (aspect_ratio === "4:3") {
-        width = 1152; height = 896;
-    } else if (aspect_ratio === "3:4") {
-        width = 896; height = 1152;
     }
 
     try {
@@ -42,9 +26,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     sampler_name: 'k_dpmpp_2s_a',
                     cfg_scale: 5,
                     steps: 50,
-                    width: width,
-                    height: height,
-                    models: ['flux-1'],
+                    width: width || 1024,
+                    height: height || 1024,
+                    models: ['stable_diffusion_xl'],
                 },
                 nsfw: false,
                 censor_nsfw: true,
@@ -55,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             {
                 headers: {
                     'Content-Type': 'application/json',
-                    'apikey': HORDE_API_KEY,
+                    'apikey': '0000000000',
                     'Client-Agent': 'DreamImg-AI/1.0;contact@dreamimg.ai'
                 },
             }

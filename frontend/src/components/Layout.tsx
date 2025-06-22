@@ -1,52 +1,66 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
-import { useSession } from 'next-auth/react';
-import { Button } from './ui/button';
+import { useSession, signOut } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
 import Head from 'next/head';
 import { Toaster } from "@/components/ui/sonner";
 import UserStatus from './UserStatus';
 import { useTranslation } from 'next-i18next';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const Header = () => {
   const { t } = useTranslation('common');
   const router = useRouter();
   const { data: session } = useSession();
+  const [isMounted, setIsMounted] = React.useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const navItems = [
-    { name: t('features'), href: '/#features' },
-    { name: t('pricing'), href: '/pricing' },
-    { name: t('faq'), href: '/#faq' },
-    { name: t('community'), href: '/community' },
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const navLinks = [
+    { key: 'home', name: 'Home', href: '/' },
+    { key: 'features', name: 'Features', href: '/#features' },
+    { key: 'pricing', name: 'Pricing', href: '/pricing' },
+    { key: 'faq', name: 'FAQ', href: '/#faq' },
+    { key: 'my_works', name: 'My Works', href: '/my-works' },
+    { key: 'community', name: 'Community', href: '/community' },
   ];
+
+  const isActive = (href: string) => {
+    return (
+      (href.includes('#') && router.asPath.endsWith(href)) ||
+      (router.pathname === href && !href.includes('#'))
+    );
+  };
 
   return (
     <header className="bg-gray-900/80 backdrop-blur-md sticky top-0 z-50 w-full border-b border-gray-800">
       <div className="container mx-auto">
           <div className="flex justify-between items-center h-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-            <Link href="/" className="flex items-center space-x-3" target="_blank" rel="noopener noreferrer">
+            <Link href="/" className="flex items-center space-x-3" rel="noopener noreferrer">
               <Image src="/logo.png" alt={t('logo_alt', 'DreamImg AI Logo')} width={32} height={32} priority suppressHydrationWarning />
               <span className="text-xl font-bold">{t('brand_name', 'DreamImg AI')}</span>
             </Link>
-            <nav className="hidden md:flex items-center space-x-2">
-              {navItems.map((link) => (
+            <div className="hidden md:flex items-center space-x-1">
+              {navLinks.map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`nav-link px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-300 ${
-                    (link.href.includes('#') && router.asPath.endsWith(link.href)) || (router.pathname === link.href && !link.href.includes('#'))
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive(link.href)
                       ? 'bg-gray-700 text-white'
-                      : ''
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                   }`}
-                  target="_blank"
-                  rel="noopener noreferrer"
                 >
-                  {link.name}
+                  {t(link.key, link.name)}
                 </Link>
               ))}
-            </nav>
+            </div>
             <div className="flex items-center space-x-4">
               <LanguageSwitcher />
               {session ? (
@@ -54,15 +68,47 @@ const Header = () => {
               ) : (
                 <div className="flex items-center space-x-2">
                   <Button variant="ghost" asChild>
-                    <Link href="/login" target="_blank" rel="noopener noreferrer">{t('login')}</Link>
+                    <Link href="/login" rel="noopener noreferrer">{isMounted ? t('login') : 'Login'}</Link>
                   </Button>
                   <Button asChild>
-                    <Link href="/signup" target="_blank" rel="noopener noreferrer">{t('signup')}</Link>
+                    <Link href="/signup" rel="noopener noreferrer">{isMounted ? t('signup') : 'Sign Up'}</Link>
                   </Button>
                 </div>
               )}
             </div>
+            <div className="flex md:hidden items-center space-x-2">
+              <Button variant="ghost" onClick={() => setIsMenuOpen(true)}>
+                {t('menu')}
+              </Button>
+            </div>
           </div>
+          <AnimatePresence>
+            {isMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="md:hidden"
+              >
+                <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.name}
+                      href={link.href}
+                      onClick={() => setIsMenuOpen(false)}
+                      className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                        isActive(link.href)
+                          ? 'bg-gray-700 text-white'
+                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      }`}
+                    >
+                      {t(link.key, link.name)}
+                    </Link>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
       </div>
     </header>
   );

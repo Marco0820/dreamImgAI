@@ -2,11 +2,11 @@
   "welcome_message": "DreamImg AI",
   "hero": {
     "subtitle": "Create stunning AI-generated images in seconds",
-    "tagline": "World's First Unlimited Free AI Image Generator"
+    "tagline": "The world's first free multi-model AI image generator"
   },
   "featureTags": {
     "free": "100% Free",
-    "poweredBy": "Powered by Flux.1 Dev",
+    "poweredBy": "Powered by Flux+Seedream",
     "noLogin": "No Login Required",
     "unlimited": "Unlimited Generations"
   }
