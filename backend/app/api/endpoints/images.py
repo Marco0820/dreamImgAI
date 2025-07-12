@@ -73,6 +73,26 @@ async def generate_image(
     This endpoint uses an asynchronous job submission and polling mechanism.
     """
     await verify_turnstile(image_in.turnstile_token)
+    
+    # --- Credit consumption logic ---
+    if current_user:
+        # Define the cost for generating an image. This could be dynamic based on model/parameters.
+        generation_cost = 1 # e.g., 1 credit per image
+
+        if current_user.credits < generation_cost:
+            raise HTTPException(
+                status_code=402, # Payment Required
+                detail=f"Insufficient credits. You need {generation_cost} credits to generate an image, but you only have {current_user.credits}."
+            )
+        
+        # Deduct credits immediately upon starting the job
+        current_user.credits -= generation_cost
+        current_user.credits_spent += generation_cost
+        db.commit()
+        db.refresh(current_user)
+        logger.info(f"Deducted {generation_cost} credit(s) from user {current_user.id}. New balance: {current_user.credits}")
+
+
     try:
         user_id_for_db = current_user.id if current_user else None
 

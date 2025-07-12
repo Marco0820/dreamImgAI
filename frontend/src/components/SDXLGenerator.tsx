@@ -236,7 +236,7 @@ const SDXLGenerator = () => {
     }
 
     setIsGenerating(true);
-    setGeneratedImages(Array(4).fill({ status: 'loading' }));
+    setGeneratedImages(Array(1).fill({ status: 'loading' }));
 
     let image_b64 = null;
     if (uploadedImage.file) {
@@ -250,97 +250,50 @@ const SDXLGenerator = () => {
       }
     }
 
-    const selectedAspectRatio = aspectRatios.find(ar => ar.value === aspectRatio) || aspectRatios[0];
+    try {
+        const finalPrompt = [prompt, style, color, lighting, composition].filter(Boolean).join(', ');
+        const endpoint = '/api/generate-image';
+        const payload = {
+            prompt: finalPrompt,
+            negative_prompt: negativePrompt,
+            style, color, lighting, composition,
+            aspect_ratio: aspectRatio,
+            turnstile_token: turnstileToken,
+            image_b64: image_b64,
+            reference_strength: referenceStrength / 100
+        };
+        
+        const generateResponse = await axios.post(endpoint, payload);
+        const imageUrl = generateResponse.data.image;
 
-    const enhancedPromptParts = [prompt];
-    if (style) enhancedPromptParts.push(style);
-    if (color) enhancedPromptParts.push(color);
-    if (lighting) enhancedPromptParts.push(lighting);
-    if (composition) enhancedPromptParts.push(composition);
-    const enhancedPrompt = enhancedPromptParts.join(', ');
+        if (!imageUrl) throw new Error('No image URL returned.');
 
-    const requestBody = {
-      prompt: enhancedPrompt,
-      negative_prompt: showNegativePrompt ? negativePrompt : '',
-      width: selectedAspectRatio.width,
-      height: selectedAspectRatio.height,
-      style: style,
-      color: color,
-      lighting: lighting,
-      composition: composition,
-      image_b64,
-      reference_strength: image_b64 ? referenceStrength / 100 : undefined,
-      turnstile_token: turnstileToken,
-    };
-    
-    const generateCount = 4;
-    const generateSequentially = async () => {
-      for (let i = 0; i < generateCount; i++) {
-        try {
-          let imageUrl: string;
+        const newImage: GeneratedImage = { status: 'done', url: imageUrl };
+        setGeneratedImages([newImage]); // Directly set the single image
+        
+        const updatedHistory = [{ url: imageUrl, prompt: finalPrompt, timestamp: Date.now() }, ...history];
+        setHistory(updatedHistory);
+        localStorage.setItem('generatedImagesHistory', JSON.stringify(updatedHistory));
 
-          if (selectedModel.includes('flux')) {
-            const generateResponse = await axios.post('/api/ttapi/flux/generate', {
-                ...requestBody,
-                model: selectedModel, 
-                size: `${selectedAspectRatio.width}x${selectedAspectRatio.height}`,
-            });
+    } catch (error: any) {
+      const err = error as any;
+      console.error("Generation failed:", err);
 
-            const jobId = generateResponse.data?.data?.jobId;
-            if (!jobId) {
-                throw new Error('Failed to get job ID from ttapi.io');
-            }
-            imageUrl = await pollForImage(jobId);
-          } else {
-            let endpoint = '/api/horde/generate';
-            if (selectedModel === 'seedream3') {
-              endpoint = '/api/volcano/generate';
-            }
-  
-            const response = await axios.post(endpoint, requestBody);
-            imageUrl = response.data.image;
-          }
-          
-          // Add to history
-          const newHistoryImage: HistoryImage = {
-            url: imageUrl,
-            prompt: requestBody.prompt,
-            timestamp: Date.now()
-          };
-
-          setHistory(currentHistory => {
-            const updatedHistory = [newHistoryImage, ...currentHistory].slice(0, 16);
-            try {
-              localStorage.setItem('generatedImagesHistory', JSON.stringify(updatedHistory));
-            } catch (error) {
-              console.error("Failed to save history to localStorage", error);
-            }
-            return updatedHistory;
-          });
-          
-          setGeneratedImages(currentImages => {
-              const newImages = [...currentImages];
-              newImages[i] = { status: 'done', url: imageUrl };
-              return newImages;
-          });
-
-        } catch (err: any) {
-            console.error(`Generation failed for image ${i + 1}:`, err);
-            toast.error(`Image ${i + 1} generation failed.`);
-            setGeneratedImages(currentImages => {
-                const newImages = [...currentImages];
-                newImages[i] = { status: 'error', error: err.message || 'Unknown error' };
-                return newImages;
-            });
-        }
+      if (err.response?.status === 402) {
+        toast.error(t('error_insufficient_credits'), {
+          action: {
+            label: t('recharge_button'),
+            onClick: () => router.push('/pricing'),
+          },
+        });
+      } else {
+        const errorMessage = err.response?.data?.detail || err.message || t('generator.generation_failed');
+        toast.error(errorMessage);
       }
+      
+      setGeneratedImages(Array(1).fill({ status: 'error', error: t('generator.generation_failed') }));
+    } finally {
       setIsGenerating(false);
-    }
-
-    generateSequentially();
-
-    if (imageInputRef.current) {
-      imageInputRef.current.value = '';
     }
   };
 

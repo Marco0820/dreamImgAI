@@ -18,3 +18,6 @@ fastapi-users[prisma]
 # Tencent Cloud HunyuanDiT
 tencentcloud-sdk-python-hunyuan
 Pillow
+
+# Stripe for webhook verification (even with Creem)
+stripe

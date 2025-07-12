@@ -27,6 +27,14 @@ class Config(BaseSettings):
     # Cloudflare Turnstile
     CLOUDFLARE_TURNSTILE_SECRET_KEY: str
 
+    # Creem API Key
+    CREEM_API_KEY: Optional[str] = None
+    CREEM_WEBHOOK_SECRET: Optional[str] = None
+    CREEM_API_URL: Optional[str] = None # For overriding the default test API
+
+    # Client URL for redirecting after payment
+    CLIENT_BASE_URL: str = "http://localhost:3000"
+
     NEXTAUTH_SECRET: Optional[str] = os.getenv("NEXTAUTH_SECRET")
 
 settings = Config()

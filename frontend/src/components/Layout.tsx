@@ -14,7 +14,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 const Header = () => {
   const { t } = useTranslation('common');
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession(); // Get status from useSession
   const [isMounted, setIsMounted] = React.useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -25,10 +25,10 @@ const Header = () => {
   const navLinks = [
     { key: 'home', name: 'Home', href: '/' },
     { key: 'features', name: 'Features', href: '/#features' },
-    { key: 'pricing', name: 'Pricing', href: '/pricing' },
+    { key: 'pricing.nav_text', name: 'Pricing', href: '/pricing' },
     { key: 'faq', name: 'FAQ', href: '/#faq' },
     { key: 'my_works', name: 'My Works', href: '/my-works' },
-    { key: 'community', name: 'Community', href: '/community' },
+    // { key: 'community', name: 'Community', href: '/community' },
   ];
 
   const isActive = (href: string) => {
@@ -43,7 +43,7 @@ const Header = () => {
       <div className="container mx-auto">
           <div className="flex justify-between items-center h-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
             <Link href="/" className="flex items-center space-x-3" rel="noopener noreferrer">
-              <Image src="/logo.png" alt={t('logo_alt', 'DreamImg AI Logo')} width={32} height={32} priority suppressHydrationWarning />
+              <Image src="/logo.png" alt={t('logo_alt', 'DreamImg AI Logo')} width={32} height={32} />
               <span className="text-xl font-bold">{t('brand_name', 'DreamImg AI')}</span>
             </Link>
             <div className="hidden md:flex items-center space-x-1">
@@ -63,9 +63,13 @@ const Header = () => {
             </div>
             <div className="flex items-center space-x-4">
               <LanguageSwitcher />
-              {session ? (
+              {status === 'loading' && (
+                <div className="animate-pulse bg-gray-700 rounded-md w-36 h-8"></div>
+              )}
+              {status === 'authenticated' && session && (
                 <UserStatus />
-              ) : (
+              )}
+              {status === 'unauthenticated' && (
                 <div className="flex items-center space-x-2">
                   <Button variant="ghost" asChild>
                     <Link href="/login" rel="noopener noreferrer">{isMounted ? t('login') : 'Login'}</Link>

@@ -8,6 +8,6 @@ class Image(Base):
     id = Column(Integer, primary_key=True, index=True)
     prompt = Column(String, index=True)
     image_url = Column(String)
-    owner_id = Column(Integer, ForeignKey("user.id"))
+    owner_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="images") 

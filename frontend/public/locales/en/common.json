@@ -83,6 +83,8 @@
   "faq6_answer": "We take privacy very seriously. We do not store your prompts or generated images on our servers and do not require any personal information. Your creations are completely private and deleted after generation.",
   "home": "Home",
   "my_works": "My Works",
+  "my_works_title": "My Works",
+  "my_works_description": "Here you can see all the images you have generated.",
   "signOut": "Sign Out",
   "signIn": "Sign In",
   "register": "Register",
@@ -115,7 +117,9 @@
   "generator.alt_text_prefix": "Generated image",
   "generator.generation_failed": "Generation failed",
   "generator.negative_prompt": "Negative Prompt",
+  "generator.negative_prompt_placeholder": "What to avoid in the image? (e.g., ugly, deformed, extra fingers)",
   "generator.upgrade_required_for_model": "You need to upgrade to the Ultimate plan to use this model.",
+  "generator.results": "Results",
   "pricing_title": "Choose Your Plan",
   "pricing_subtitle": "Get the best of Raphael AI with faster generation and commercial use.",
   "pricing_monthly": "Monthly",
@@ -243,5 +247,75 @@
   "increase_speed_10x": "Increase generation speed by 10x",
   "download": "Download",
   "optimize": "Optimize",
-  "generating_image_alt": "Generating image"
-} 
+  "generating_image_alt": "Generating image",
+  "login_required_to_purchase": "Please log in to purchase credits.",
+  "error_creating_checkout": "Failed to create checkout session. Please try again.",
+  "error_loading_packages": "Failed to load credit packages. Please refresh the page.",
+  "pricing_credits_title": "Purchase Credits",
+  "pricing_credits_subtitle": "Top up your balance to continue creating.",
+  "credits_label": "Credits",
+  "credits_pack_buy_button": "Buy Now",
+  "error_insufficient_credits": "Not enough credits to generate image.",
+  "recharge_button": "Recharge",
+  "payment_success_title": "Payment Successful!",
+  "payment_success_desc": "Your credits have been added! You will be redirected shortly.",
+  "payment_cancelled_title": "Payment Cancelled",
+  "payment_cancelled_desc": "Your payment was not completed. Your balance has not been charged.",
+  "go_to_generation_page": "Go to Generate",
+  "try_again_button": "Try Again",
+  "insufficient_credits_message": "You do not have enough credits. Please top up and try again.",
+  "insufficient_credits_recharge_button": "Top-up",
+
+  "pricing": {
+    "nav_text": "Pricing",
+    "title": "Choose Your Plan",
+    "subtitle": "Get the best experience with DreamImg AI through faster generation and commercial use.",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "yearly_discount": "Save 20%",
+    "yearly_billing_note": "Billed annually",
+    "monthly_billing_note": "Billed monthly",
+    "premium": {
+      "title": "Premium",
+      "price": "$10",
+      "period": "/mo",
+      "features": {
+        "feature1": "Unlimited image generation",
+        "feature2": "Fast generation (5x speed)",
+        "feature3": "No ads",
+        "feature4": "No watermark"
+      },
+      "button": "Upgrade to Premium"
+    },
+    "ultimate": {
+      "title": "Ultimate",
+      "badge": "Most Popular",
+      "price": "$20",
+      "period": "/mo",
+      "features": {
+        "feature1": "Unlimited image generation",
+        "feature2": "Fastest generation",
+        "feature3": "No ads",
+        "feature4": "No watermark",
+        "feature5": "Advanced optimization features",
+        "feature6": "Private generation",
+        "feature7": "✨ HD image generation",
+        "feature8": "Early access to new features"
+      },
+      "button": "Upgrade to Ultimate"
+    },
+    "enterprise": {
+      "title": "Enterprise",
+      "price": "Custom",
+      "features": {
+        "feature1": "Total privacy",
+        "feature2": "Custom models",
+        "feature3": "Custom integration",
+        "feature4": "Dedicated support",
+        "feature5": "API access",
+        "feature6": "High volume"
+      },
+      "button": "Coming Soon"
+    }
+  }
+}

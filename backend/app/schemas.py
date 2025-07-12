@@ -1,5 +1,20 @@
 from pydantic import BaseModel, Field
 from typing import Optional
+from fastapi_users import schemas
+
+class UserRead(schemas.BaseUser[int]):
+    """User schema for reading user data, includes credits."""
+    credits: int
+    creem_price_id: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+class UserCreate(schemas.BaseUserCreate):
+    pass
+
+class UserUpdate(schemas.BaseUserUpdate):
+    pass
 
 # Shared properties
 class ImageBase(BaseModel):
@@ -28,4 +43,18 @@ class ImageInDBBase(ImageBase):
 
 # Properties to return to client
 class Image(ImageInDBBase):
-    pass 
+    pass
+
+class CreditPackageBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    price_id: str
+    credits_amount: int
+    price_display: Optional[str] = None
+    is_popular: bool = False
+
+class CreditPackageRead(CreditPackageBase):
+    id: int
+
+    class Config:
+        from_attributes = True 

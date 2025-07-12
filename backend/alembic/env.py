@@ -1,4 +1,9 @@
+import os
+import sys
 from logging.config import fileConfig
+
+# Add project root to Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -20,7 +25,7 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 from app.database import Base
 from app.models import *  # Import all models to ensure they are registered with Base
-from app.config import settings
+from app.core.config import settings
 
 target_metadata = Base.metadata
 
@@ -43,7 +48,7 @@ def run_migrations_offline() -> None:
 
     """
     context.configure(
-        url=settings.DATABASE_URL,
+        url=settings.DATABASE_URL,  # Use URL from settings
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -60,9 +65,10 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    # This block is sent directly to the create_engine() function
+    # This block is modified to directly use the DATABASE_URL from settings
     from sqlalchemy import create_engine
-    connectable = create_engine(settings.DATABASE_URL, connect_args={"client_encoding": "utf8"})
+    
+    connectable = create_engine(settings.DATABASE_URL)
 
     with connectable.connect() as connection:
         context.configure(
