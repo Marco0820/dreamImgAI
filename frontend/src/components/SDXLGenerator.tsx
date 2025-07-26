@@ -260,7 +260,8 @@ const SDXLGenerator = () => {
             aspect_ratio: aspectRatio,
             turnstile_token: turnstileToken,
             image_b64: image_b64,
-            reference_strength: referenceStrength / 100
+            reference_strength: referenceStrength / 100,
+            model: selectedModel
         };
         
         const generateResponse = await axios.post(endpoint, payload);
@@ -350,8 +351,9 @@ const SDXLGenerator = () => {
 
   const StylePopover = ({ label, options, selectedValue, onSelect, multiColumn = true }: { label: string; options: StyleOption[]; selectedValue: string | null; onSelect: (value: string) => void; multiColumn?: boolean }) => {
     const { t } = useTranslation('common');
+    const [isOpen, setIsOpen] = useState(false);
     return (
-      <Popover>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" className="w-full justify-between px-3">
             <span className="truncate">{selectedValue ? t(options.find(o => o.value === selectedValue)?.label || label) : t(label)}</span>
@@ -364,7 +366,10 @@ const SDXLGenerator = () => {
               <Button
                 key={option.value}
                 variant={selectedValue === option.value ? 'secondary' : 'ghost'}
-                onClick={() => onSelect(option.value)}
+                onClick={() => {
+                  onSelect(option.value);
+                  setIsOpen(false);
+                }}
                 className="w-full justify-start text-xs h-8 px-2 text-white hover:bg-amber-500"
               >
                 {t(option.label)}

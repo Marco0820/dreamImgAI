@@ -21,11 +21,17 @@ class Config(BaseSettings):
     DATABASE_URL: str = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}/{POSTGRES_DB}"
 
     # Tencent Cloud API Credentials
-    TENCENT_SECRET_ID: str
-    TENCENT_SECRET_KEY: str
+    TENCENT_SECRET_ID: Optional[str] = None
+    TENCENT_SECRET_KEY: Optional[str] = None
+
+    # TTAPI Key
+    TTAPI_KEY: str = os.getenv("TTAPI_KEY", "your_ttapi_key_here")
+
+    # Runware.ai Configuration
+    RUNWARE_API_KEY: str = os.getenv("RUNWARE_API_KEY", "4gsvXDNnSNHPbx1LlHKnYaHmSnEwmi8o")
 
     # Cloudflare Turnstile
-    CLOUDFLARE_TURNSTILE_SECRET_KEY: str
+    CLOUDFLARE_TURNSTILE_SECRET_KEY: str = os.getenv("CLOUDFLARE_TURNSTILE_SECRET_KEY", "your_secret_key_here")
 
     # Creem API Key
     CREEM_API_KEY: Optional[str] = None
@@ -39,8 +45,8 @@ class Config(BaseSettings):
 
 settings = Config()
 
-if not settings.TENCENT_SECRET_ID or not settings.TENCENT_SECRET_KEY:
-    print("--- FATAL ERROR: Tencent Cloud credentials are not set in the .env file.")
+if not settings.TTAPI_KEY or settings.TTAPI_KEY == "YOUR_TTAPI_KEY":
+    print("--- WARNING: TTAPI_KEY is not set or is using the default placeholder in the .env file.")
 
 if not settings.NEXTAUTH_SECRET:
     print("--- WARNING: NEXTAUTH_SECRET is not set. This might affect other parts of the app if they exist.") 

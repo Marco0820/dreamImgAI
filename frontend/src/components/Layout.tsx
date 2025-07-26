@@ -54,7 +54,7 @@ const Header = () => {
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     isActive(link.href)
                       ? 'bg-gray-700 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      : 'text-gray-300 hover:bg-sky-500 hover:text-white'
                   }`}
                 >
                   {t(link.key, link.name)}
@@ -103,7 +103,7 @@ const Header = () => {
                       className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
                         isActive(link.href)
                           ? 'bg-gray-700 text-white'
-                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                          : 'text-gray-300 hover:bg-sky-500 hover:text-white'
                       }`}
                     >
                       {t(link.key, link.name)}

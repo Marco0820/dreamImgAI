@@ -31,6 +31,7 @@ class ImageCreate(ImageBase):
     image_b64: Optional[str] = Field(None, alias='image_b64')
     reference_strength: Optional[float] = Field(None, alias='reference_strength')
     turnstile_token: str = Field(..., alias='turnstile_token')
+    model: Optional[str] = "tt-flux1-schnell"
 
 # Properties stored in DB
 class ImageInDBBase(ImageBase):
