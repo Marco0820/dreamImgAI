@@ -54,6 +54,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const rawBody = await buffer(req);
+    
+    // --- Enhanced Logging ---
+    console.log('[creem-webhook] --- Verifying Signature ---');
+    const signature = req.headers['creem-signature'] as string;
+    const secret = process.env.CREEM_WEBHOOK_SECRET;
+    console.log(`[creem-webhook] Received Signature: ${signature}`);
+    console.log(`[creem-webhook] Webhook Secret Loaded: ${secret ? `"${secret.substring(0, 5)}..."` : 'Not Loaded!'}`);
+
+    if (!secret) {
+        console.error('[creem-webhook] CRITICAL: CREEM_WEBHOOK_SECRET is not set in environment variables.');
+        return res.status(500).json({ message: 'Webhook secret is not configured on the server.' });
+    }
+    // --- End Enhanced Logging ---
+
     console.log('[creem-webhook] Verifying signature...');
     const isVerified = verifyCreemWebhook(req, rawBody);
     if (!isVerified) {
@@ -63,10 +77,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('[creem-webhook] Signature verified successfully.');
 
     const event = JSON.parse(rawBody.toString());
-    // Temporarily keep the full log for one more test
-    console.log('[creem-webhook] Full event payload:', JSON.stringify(event, null, 2));
+    
+    // Log the full event payload to understand its structure
+    console.log('[creem-webhook] Full event payload received:', JSON.stringify(event, null, 2));
 
-    // --- START OF FIX ---
+    // --- START OF FIX --- (Logic seems plausible, let's keep it but log everything)
 
     // 1. Use the correct event type field: `eventType`
     if (event.eventType === 'checkout.completed') {
@@ -77,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // 3. Use the correct paths for userId and priceId
         const userId = checkoutObject.metadata?.userId;
-        const priceId = checkoutObject.product_id; // Corrected from `product.id`
+        const priceId = checkoutObject.product?.id; // Corrected path from product_id to product.id
         
         console.log(`[creem-webhook] Extracted from session - UserID: ${userId}, PriceID: ${priceId}`);
 

@@ -1,8 +1,17 @@
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
+import sys
 import os
 import time
 import logging
+
+# Add the project root directory to the Python path
+# This ensures that all modules can be imported correctly, regardless of how the app is run.
+# The project root is assumed to be one level up from the directory containing main.py (i.e., 'backend/')
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

@@ -7,8 +7,17 @@ import { useTranslation } from 'next-i18next';
 import { GetStaticProps, type NextPage } from 'next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Link from 'next/link';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
+
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
+import { useSession } from 'next-auth/react';
 
 type HistoryImage = {
+  id: number;
   url: string;
   prompt: string;
   timestamp: number;
@@ -16,27 +25,32 @@ type HistoryImage = {
 
 const MyWorksPage: NextPage = () => {
   const { t } = useTranslation('common');
-  const [history, setHistory] = useState<HistoryImage[]>([]);
-  const [hoveredImageIndex, setHoveredImageIndex] = useState<number | null>(null);
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    try {
-      const storedHistory = localStorage.getItem('generatedImagesHistory');
-      if (storedHistory) {
-        const parsedHistory = JSON.parse(storedHistory);
-        // Sort by timestamp descending to show newest first
-        parsedHistory.sort((a: HistoryImage, b: HistoryImage) => b.timestamp - a.timestamp);
-        setHistory(parsedHistory);
-      }
-    } catch (error) {
-      console.error("Failed to load or parse history from localStorage", error);
-    }
-  }, []);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImageDimensions, setPreviewImageDimensions] = useState({ width: 0, height: 0 });
 
-  const handleDelete = (timestamp: number) => {
-    const updatedHistory = history.filter(image => image.timestamp !== timestamp);
-    setHistory(updatedHistory);
-    localStorage.setItem('generatedImagesHistory', JSON.stringify(updatedHistory));
+  const { data: history = [], isLoading, error } = useQuery<HistoryImage[]>({
+    queryKey: ['my-works', session?.user?.id],
+    queryFn: async () => {
+      const response = await axios.get('/api/my-works');
+      return response.data;
+    },
+    enabled: !!session, // Only run the query if the user is logged in
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (imageId: number) => axios.delete(`/api/images/${imageId}`),
+    onSuccess: () => {
+      // Invalidate and refetch the 'my-works' query to update the list
+      queryClient.invalidateQueries({ queryKey: ['my-works'] });
+      queryClient.invalidateQueries({ queryKey: ['my-works', session?.user?.id] });
+    },
+  });
+
+  const handleDelete = (imageId: number) => {
+    deleteMutation.mutate(imageId);
   };
   
   const handleDownload = async (url: string) => {
@@ -54,6 +68,59 @@ const MyWorksPage: NextPage = () => {
     }
   };
 
+  const handleOpenPreview = (url: string) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxWidth = window.innerWidth * 0.9;
+      const maxHeight = window.innerHeight * 0.9;
+      const ratio = Math.min(maxWidth / img.naturalWidth, maxHeight / img.naturalHeight);
+      
+      setPreviewImageDimensions({
+        width: img.naturalWidth * ratio,
+        height: img.naturalHeight * ratio,
+      });
+      setPreviewImage(url);
+    };
+    img.src = url;
+  };
+
+  const handleClosePreview = () => {
+    setPreviewImage(null);
+    setPreviewImageDimensions({ width: 0, height: 0 });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h1 className="text-4xl md:text-5xl font-bold text-stone-100 tracking-tight">{t('my_works_title')}</h1>
+        <p className="mt-4 text-lg text-stone-400">{t('loading', 'Loading...')}</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h1 className="text-4xl md:text-5xl font-bold text-stone-100 tracking-tight">{t('my_works_title')}</h1>
+        <p className="mt-4 text-lg text-red-400">{t('error_loading_works', 'Failed to load your works.')}</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+     return (
+        <div className="container mx-auto px-4 py-8 text-center">
+            <h1 className="text-4xl md:text-5xl font-bold text-stone-100 tracking-tight">{t('my_works_title')}</h1>
+            <p className="mt-4 text-lg text-stone-400">
+                {t('login_to_see_works', 'Please log in to see your works.')}
+            </p>
+            <Button className="mt-6" asChild>
+                <Link href="/login">{t('login', 'Login')}</Link>
+            </Button>
+        </div>
+    )
+  }
+
   if (history.length === 0) {
     return (
         <div className="container mx-auto px-4 py-8 text-center">
@@ -69,6 +136,7 @@ const MyWorksPage: NextPage = () => {
   }
 
   return (
+    <>
       <div className="container mx-auto px-4 py-8">
         <header className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-stone-100 tracking-tight">{t('my_works_title')}</h1>
@@ -81,40 +149,72 @@ const MyWorksPage: NextPage = () => {
           {history.map((image, index) => (
             <motion.div
               key={image.timestamp}
-              className="relative overflow-hidden rounded-lg group aspect-square"
-              onMouseEnter={() => setHoveredImageIndex(index)}
-              onMouseLeave={() => setHoveredImageIndex(null)}
-              initial={{ opacity: 0, y: 20 }}
+              className="relative overflow-hidden rounded-lg group"
+              initial={{ opacity: 0, y: 0 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <img
-                src={image.url}
-                alt={image.prompt}
-                className="w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
-              />
+              <div className="relative pt-[100%] cursor-pointer" onClick={() => handleOpenPreview(image.url)}>
+                <img
+                  src={image.url}
+                  alt={image.prompt}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+                />
+              </div>
               
-              {hoveredImageIndex === index && (
-                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 flex flex-col justify-between">
-                    <div>
-                        <div className="flex justify-end space-x-2">
-                           <Button onClick={() => handleDownload(image.url)} size="icon" variant="ghost" className="text-white hover:bg-white/20 hover:text-white h-8 w-8">
-                                <Download size={16} />
-                            </Button>
-                            <Button onClick={() => handleDelete(image.timestamp)} size="icon" variant="ghost" className="text-white hover:bg-white/20 hover:text-white h-8 w-8">
-                                <Trash2 size={16} />
-                            </Button>
-                        </div>
-                    </div>
-                    <p className="text-white text-sm font-light leading-snug line-clamp-3">
-                      {image.prompt}
-                    </p>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+                 <div>
+                     <div className="flex justify-end space-x-2">
+                        <Button onClick={(e) => {e.stopPropagation(); handleDownload(image.url)}} size="icon" variant="ghost" className="text-white hover:bg-white/20 hover:text-white h-8 w-8">
+                             <Download size={16} />
+                         </Button>
+                         <Button onClick={(e) => {e.stopPropagation(); handleDelete(image.id)}} size="icon" variant="ghost" className="text-white hover:bg-white/20 hover:text-white h-8 w-8">
+                             <Trash2 size={16} />
+                         </Button>
+                     </div>
                  </div>
-              )}
+                 <p className="text-white text-sm font-light leading-snug line-clamp-3">
+                   {image.prompt}
+                 </p>
+              </div>
             </motion.div>
           ))}
         </div>
       </div>
+       {previewImage && (
+         <Dialog open={!!previewImage} onOpenChange={(isOpen) => !isOpen && handleClosePreview()}>
+            <DialogContent 
+              className="p-0 bg-stone-900 border-stone-700 text-white flex flex-col [&>button[aria-label=Close]]:hidden"
+              style={{
+                width: previewImageDimensions.width ? `${previewImageDimensions.width}px` : 'auto',
+                height: previewImageDimensions.height ? `${previewImageDimensions.height}px` : 'auto',
+                maxWidth: '90vw',
+                maxHeight: '90vh'
+              }}
+            >
+              <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+                 <Button
+                    size="icon"
+                    variant="secondary"
+                    className="w-8 h-8"
+                    onClick={() => handleDownload(previewImage!)}
+                >
+                    <Download className="h-4 w-4" />
+                </Button>
+                 <Button
+                    size="icon"
+                    variant="secondary"
+                    className="w-8 h-8"
+                    onClick={handleClosePreview}
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+              <img src={previewImage} alt="Preview" className="object-contain w-full h-full" />
+           </DialogContent>
+         </Dialog>
+      )}
+    </>
   );
 };
 

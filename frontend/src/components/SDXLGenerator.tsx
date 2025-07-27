@@ -22,7 +22,7 @@ import { motion } from 'framer-motion';
 import { Download, ImageIcon, RefreshCw, Trash2, ChevronDown, Sparkles, X, Loader2, Star } from 'lucide-react';
 import { usePromptStore } from '@/store/promptStore';
 import { Slider } from "@/components/ui/slider"
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
 import { aspectRatios, styles, colors, lightings, compositions, inspirationPrompts } from '@/data/styleOptions';
 import ModelSelector, { Model } from './ModelSelector';
 import axios from 'axios';
@@ -86,6 +86,27 @@ const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) 
     reader.onload = () => resolve((reader.result as string).split(',')[1]);
     reader.onerror = error => reject(error);
 });
+
+const createThumbnail = (dataUrl: string, width = 256, height = 256): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return reject(new Error('Could not get canvas context'));
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.85)); 
+    };
+    img.onerror = (err) => {
+      reject(err);
+    };
+    img.src = dataUrl;
+  });
+};
 
 type GeneratedImage = {
   status: 'loading' | 'done' | 'error';
@@ -189,6 +210,7 @@ const SDXLGenerator = () => {
   const turnstileSiteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
   console.log('Attempting to read Turnstile Site Key:', turnstileSiteKey);
   const isTurnstileMisconfigured = !turnstileSiteKey || turnstileSiteKey === 'YOUR_TURNSTILE_SITE_KEY';
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   interface StyleOption {
     value: string;
@@ -196,11 +218,9 @@ const SDXLGenerator = () => {
   }
 
   const handleModelChange = (modelId: string) => {
-    const model = availableModels.find(m => m.id === modelId);
-    if (model?.paid && session?.user?.creemPriceId !== 'price_ultimate') {
-      toast.info(t('generator.upgrade_required_for_model'));
-      router.push('/pricing');
-    }
+    // The check for paid models is now handled entirely by the backend.
+    // The backend will check for either a subscription or sufficient credits.
+    // This removes the incorrect client-side redirect.
     setSelectedModel(modelId);
   };
 
@@ -208,12 +228,17 @@ const SDXLGenerator = () => {
     e.preventDefault();
     console.log("handleSubmit triggered");
 
+    // This client-side check is removed. The backend is the single source of truth
+    // for authorization and will respond with a 402 or 403 status if the user
+    // cannot use the selected model. The frontend will then react to that response.
+    /*
     const model = availableModels.find(m => m.id === selectedModel);
     if (model?.paid && session?.user?.creemPriceId !== 'price_ultimate') {
         toast.info(t('generator.upgrade_required_for_model'));
         router.push('/pricing');
         return;
     }
+    */
 
     if (!session) {
       toast.info(t('generator.login_required'));
@@ -259,7 +284,7 @@ const SDXLGenerator = () => {
             prompt: finalPrompt,
             negative_prompt: negativePrompt,
             style, color, lighting, composition,
-            aspect_ratio: aspectRatio,
+            aspect_ratio: '1:1', // Force 1:1 aspect ratio
             turnstile_token: turnstileToken,
             image_b64: image_b64,
             reference_strength: referenceStrength / 100,
@@ -279,10 +304,20 @@ const SDXLGenerator = () => {
         setGeneratedImages(newImages);
         
         // Add all new images to history
-        const historyUpdates = imageUrls.map((url: string) => ({ url, prompt: finalPrompt, timestamp: Date.now() }));
+        const historyUpdatesPromises = imageUrls.map(async (url: string) => {
+          try {
+            const thumbnailUrl = await createThumbnail(url);
+            return { url: thumbnailUrl, prompt: finalPrompt, timestamp: Date.now() };
+          } catch (error) {
+            console.error("Failed to create thumbnail, storing full image as fallback", error);
+            return { url, prompt: finalPrompt, timestamp: Date.now() };
+          }
+        });
+
+        const historyUpdates = await Promise.all(historyUpdatesPromises);
         const updatedHistory = [...historyUpdates, ...history];
         setHistory(updatedHistory);
-        // localStorage.setItem('generatedImagesHistory', JSON.stringify(updatedHistory)); // <-- KEY CHANGE: Remove this line to prevent storage quota errors.
+        localStorage.setItem('generatedImagesHistory', JSON.stringify(updatedHistory.slice(0, 20)));
 
     } catch (error: any) {
       const err = error as any;
@@ -303,6 +338,9 @@ const SDXLGenerator = () => {
       setGeneratedImages(Array(4).fill({ status: 'error', error: t('generator.generation_failed') })); // Show 4 error placeholders
     } finally {
       setIsGenerating(false);
+      // Reset Turnstile to get a new token for the next generation
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
     }
   };
 
@@ -529,6 +567,7 @@ const SDXLGenerator = () => {
                       <p className="text-red-500 text-xs">{t('error.turnstile_misconfigured')}</p>
                   ) : (
                       <Turnstile
+                          ref={turnstileRef}
                           siteKey={turnstileSiteKey}
                           onSuccess={setTurnstileToken}
                           options={{ theme: 'dark' }}
@@ -553,79 +592,79 @@ const SDXLGenerator = () => {
                 </div>
               </div>
             </form>
+          </motion.div>
 
-            {/* --- Image Output --- */}
-            {isGenerating && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-                {generatedImages.map((image, index) => (
-                  <div key={index} className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center relative">
-                    {image.status === 'loading' && (
-                      <div className="flex flex-col items-center justify-center text-center p-4">
-                        <Loader2 className="h-8 w-8 animate-spin text-stone-500 mb-4" />
-                        <p className="text-stone-300 font-semibold">{t('generating_estimate', '预计20s完成图片创作')}</p>
-                        <p className="text-stone-400 text-sm mb-4">{t('generating_masterpiece', '正在生成您的杰作...')}</p>
-                        <Button
-                          size="sm"
-                          className="bg-amber-500 hover:bg-amber-600 text-white"
-                          onClick={() => window.open('/pricing', '_blank')}
-                        >
-                          <Sparkles className="h-4 w-4 mr-2"/>
-                          {t('increase_speed_10x', '提高10倍生成速度')}
+          {/* --- Image Output --- */}
+          {isGenerating && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+              {generatedImages.map((image, index) => (
+                <div key={index} className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center relative">
+                  {image.status === 'loading' && (
+                    <div className="flex flex-col items-center justify-center text-center p-4">
+                      <Loader2 className="h-8 w-8 animate-spin text-stone-500 mb-4" />
+                      <p className="text-stone-300 font-semibold">{t('generating_estimate', '预计20s完成图片创作')}</p>
+                      <p className="text-stone-400 text-sm mb-4">{t('generating_masterpiece', '正在生成您的杰作...')}</p>
+                      <Button
+                        size="sm"
+                        className="bg-amber-500 hover:bg-amber-600 text-white"
+                        onClick={() => window.open('/pricing', '_blank')}
+                      >
+                        <Sparkles className="h-4 w-4 mr-2"/>
+                        {t('increase_speed_10x', '提高10倍生成速度')}
+                      </Button>
+                    </div>
+                  )}
+                  {image.status === 'done' && image.url && (
+                    <>
+                      <img
+                        src={image.url}
+                        alt={`${t('generator.alt_text_prefix', 'Generated image')} ${index + 1}`}
+                        className="object-contain w-full h-full rounded-lg cursor-pointer"
+                        onClick={() => handleOpenPreview(image.url!)}
+                      />
+                      <div className="absolute bottom-2 right-2 transition-opacity">
+                        <Button size="icon" variant="secondary" onClick={(e) => { e.stopPropagation(); handleDownload(image.url!); }}>
+                          <Download className="h-5 w-5" />
                         </Button>
                       </div>
-                    )}
-                    {image.status === 'done' && image.url && (
-                      <>
-                        <img
-                          src={image.url}
-                          alt={`${t('generator.alt_text_prefix', 'Generated image')} ${index + 1}`}
-                          className="object-contain w-full h-full rounded-lg cursor-pointer"
-                          onClick={() => handleOpenPreview(image.url!)}
-                        />
-                        <div className="absolute bottom-2 right-2 transition-opacity">
-                          <Button size="icon" variant="secondary" onClick={(e) => { e.stopPropagation(); handleDownload(image.url!); }}>
-                            <Download className="h-5 w-5" />
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                    {image.status === 'error' && (
-                      <div className="flex flex-col items-center text-center p-4">
-                        <X className="h-8 w-8 text-red-500 mb-4" />
-                        <p className="text-red-400">{t('generator.generation_failed', 'Generation failed')}</p>
-                        <p className="text-stone-400 text-xs">{image.error}</p>
+                    </>
+                  )}
+                  {image.status === 'error' && (
+                    <div className="flex flex-col items-center text-center p-4">
+                      <X className="h-8 w-8 text-red-500 mb-4" />
+                      <p className="text-red-400">{t('generator.generation_failed', 'Generation failed')}</p>
+                      <p className="text-stone-400 text-xs">{image.error}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!isGenerating && generatedImages.length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-xl font-semibold mb-4 text-center">{t('generator.results')}</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {generatedImages.map((image, index) => (
+                  image.status === 'done' && image.url && (
+                    <div key={index} className="group relative aspect-square">
+                      <img
+                        src={image.url}
+                        alt={`${t('generator.alt_text_prefix', 'Generated image')} ${index + 1}`}
+                        className="w-full h-full object-cover rounded-lg cursor-pointer"
+                        onClick={() => handleOpenPreview(image.url!)}
+                      />
+                      <div className="absolute bottom-2 right-2 transition-opacity opacity-0 group-hover:opacity-100">
+                        <Button size="icon" variant="secondary" onClick={(e) => { e.stopPropagation(); handleDownload(image.url!); }}>
+                          <Download className="h-5 w-5" />
+                        </Button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )
                 ))}
               </div>
-            )}
-
-            {!isGenerating && generatedImages.length > 0 && (
-              <div className="mt-8">
-                <h3 className="text-xl font-semibold mb-4 text-center">{t('generator.results')}</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {generatedImages.map((image, index) => (
-                    image.status === 'done' && image.url && (
-                      <div key={index} className="group relative aspect-square">
-                        <img
-                          src={image.url}
-                          alt={`${t('generator.alt_text_prefix', 'Generated image')} ${index + 1}`}
-                          className="object-contain w-full h-full rounded-lg cursor-pointer"
-                          onClick={() => handleOpenPreview(image.url!)}
-                        />
-                        <div className="absolute bottom-2 right-2 transition-opacity">
-                          <Button size="icon" variant="secondary" onClick={(e) => { e.stopPropagation(); handleDownload(image.url!); }}>
-                            <Download className="h-5 w-5" />
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  ))}
-                </div>
-              </div>
-            )}
-          </motion.div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -635,7 +674,7 @@ const SDXLGenerator = () => {
           <div className="mt-12">
             <h3 className="text-2xl font-bold text-center text-stone-200 mb-2">{t('inspiration_title')}</h3>
             <p className="text-center text-stone-400 mb-6">{t('inspiration_subtitle')}</p>
-            <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+            <div className="columns-2 md:columns-4 gap-4 space-y-4">
               {inspirationPrompts.map((p, index) => (
                 <motion.div
                   key={index}

@@ -1,77 +1,95 @@
+import { NextAuthOptions } from 'next-auth';
+import GithubProvider from 'next-auth/providers/github';
+import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import prisma from './prisma'; 
 import bcrypt from 'bcryptjs';
-import { AuthOptions } from 'next-auth';
-import Credentials from 'next-auth/providers/credentials';
-import prisma from './prisma';
 
-async function getUserCredits(userId: string): Promise<number> {
-  if (!userId) return 0;
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { credits: true },
-  });
-  return user?.credits ?? 0;
-}
-
-export const authOptions: AuthOptions = {
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
-    Credentials({
-      name: 'Email',
+    GithubProvider({
+      clientId: process.env.GITHUB_ID!,
+      clientSecret: process.env.GITHUB_SECRET!,
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    CredentialsProvider({
+      name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'text', placeholder: 'test@test.com' },
+        email: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials.password) {
           return null;
         }
-
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
 
-        if (!user || !user.password) {
+        if (user && user.password && await bcrypt.compare(credentials.password, user.password)) {
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            image: user.image,
+            credits: user.credits,
+            creemPriceId: user.creemPriceId,
+          };
+        } else {
           return null;
         }
-
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        return isValid ? user : null;
       },
     }),
   ],
+  
+  secret: process.env.NEXTAUTH_SECRET,
+  
   session: {
     strategy: 'jwt',
   },
+  
   callbacks: {
-    async session({ session, token }) {
-      if (token.sub && session.user) {
-        session.user.id = token.sub;
-        session.user.is_premium = token.is_premium as boolean;
-        session.user.credits = await getUserCredits(token.sub);
-      }
-      if(token.accessToken) {
-        session.accessToken = token.accessToken as string;
-      }
-      return session;
-    },
     async jwt({ token, user, account }) {
-      if (user) {
-        token.sub = user.id;
-        token.is_premium = user.is_premium;
-      }
-      if(account) {
+      if (account && account.access_token) {
         token.accessToken = account.access_token;
+      }
+      if (user) {
+        token.id = user.id;
+        token.credits = user.credits ?? 0;
+        token.creemPriceId = user.creemPriceId;
       }
       return token;
     },
+    
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id as string;
+        session.user.credits = token.credits as number;
+        session.user.creemPriceId = token.creemPriceId as string | null;
+        session.accessToken = token.accessToken as string; 
+      }
+      return session;
+    },
   },
+  
   pages: {
-    signIn: '/auth/signin',
-    newUser: '/auth/register',
+    signIn: '/login', 
+    error: '/auth/error',
+  },
+  
+  debug: process.env.NODE_ENV === 'development',
+  
+  logger: {
+    error(code, metadata) {
+      console.error(`NextAuth Error [${code}]:`, metadata);
+    },
+    warn(code) {
+      console.warn(`NextAuth Warning [${code}]`);
+    },
   },
 }; 

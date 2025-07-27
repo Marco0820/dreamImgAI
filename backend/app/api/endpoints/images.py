@@ -1,6 +1,6 @@
 import logging
 import json
-from fastapi import APIRouter, Body, Depends, HTTPException, Response, File, UploadFile
+from fastapi import APIRouter, Body, Depends, HTTPException, Response, File, UploadFile, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 import base64
@@ -28,7 +28,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # --- Fireworks.ai API Configuration ---
-FIREWORKS_API_URL = "https://api.fireworks.ai/inference/v1/workflows/accounts/fireworks/models/flux-1-schnell-fp8/text_to_image"
+FIREWORKS_API_BASE_URL = "https://api.fireworks.ai/inference/v1/workflows/accounts/"
+MODEL_MAP = {
+    # This is the "Schnell" model, using the dev-fp8 path.
+    "tt-flux1-schnell": "fireworks/models/flux-1-dev-fp8",
+
+    # "Original" also points to the same fast model as per request.
+    "flux1-dev": "fireworks/models/flux-1-dev-fp8", 
+    
+    # Community hosted models require the specific account path
+    "tt-flux1-pro": "black-forest-labs/models/FLUX.1-pro",
+    "seedream3": "fal-ai/models/seedream-3.0",
+}
 
 async def verify_turnstile(token: str):
     if not token:
@@ -71,7 +82,7 @@ async def healthcheck():
 def parse_aspect_ratio(ratio_str: Optional[str]) -> (int, int):
     """Parses aspect ratio string like '1:1' into (width, height). Defaults to 1024x1024."""
     if not ratio_str or ':' not in ratio_str:
-        return 1152, 896 # Default to a larger size
+        return 1024, 1024 # Default to a square size
 
     # A mapping of aspect ratios to supported resolutions
     # As per Fireworks.ai docs for FLUX.1 - adjusted for larger sizes
@@ -87,22 +98,72 @@ def parse_aspect_ratio(ratio_str: Optional[str]) -> (int, int):
         "5:4": (1152, 896),
     }
     
-    return resolutions.get(ratio_str, (1152, 896))
+    return resolutions.get(ratio_str, (1024, 1024))
 
 @router.post("/generate/", response_class=JSONResponse, summary="Generate Image with Fireworks.ai FLUX.1")
 async def generate_image(
+    request: Request, # Add Request to the function signature
     image_in: schemas.ImageCreate, 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user_optional),
+    db: Session = Depends(get_db)
 ):
     """
     Generate an image based on the provided prompt using Fireworks.ai FLUX.1 API.
+    Images are returned as Base64 data URLs and are not stored on the server.
     """
+    # --- Manual Dependency Resolution ---
+    # Manually call the dependency with the required arguments
+    current_user = deps.get_current_user_optional(request=request, db=db)
+    
     logger.info("--- [/generate] Endpoint hit (Fireworks.ai) ---")
     logger.info(f"Received request body: {image_in.model_dump_json(indent=2)}")
 
     if not settings.FIREWORKS_API_KEY:
         raise HTTPException(status_code=500, detail="Fireworks API key is not configured on the server.")
+
+    model_id = image_in.model or "tt-flux1-schnell"
+    generation_cost = 4  # Default cost for 4 images
+
+    # --- Credit and Subscription Logic ---
+    if current_user:
+        logger.info(f"Authenticated user: {current_user.email} (ID: {current_user.id}). Credits: {current_user.credits}")
+        
+        is_pro_model = model_id == "tt-flux1-pro"
+        has_pro_subscription = current_user.creem_price_id == 'price_ultimate'
+
+        # Pro model logic: requires subscription OR sufficient credits
+        if is_pro_model and not has_pro_subscription:
+            logger.info("User wants Pro model but lacks subscription. Checking credits as fallback.")
+            generation_cost = 20 # Pro model costs more credits
+            if current_user.credits < generation_cost:
+                logger.warning(f"User {current_user.id} has insufficient credits for Pro model.")
+                raise HTTPException(
+                    status_code=402, # 402 Payment Required
+                    detail=f"Using the Pro model without a subscription costs {generation_cost} credits, but you only have {current_user.credits}."
+                )
+        # Standard model logic: just check credits
+        elif not is_pro_model:
+            if current_user.credits < generation_cost:
+                logger.warning(f"User {current_user.id} has insufficient credits for standard model.")
+                raise HTTPException(
+                    status_code=402,
+                    detail=f"Insufficient credits. You need {generation_cost} credits for 4 images, but you only have {current_user.credits}."
+                )
+        # If user has Pro subscription, generation is free (cost is 0)
+        else: # is_pro_model and has_pro_subscription
+             generation_cost = 0
+             logger.info("User has Pro subscription. Generation is free.")
+
+    elif model_id == "tt-flux1-pro":
+        # Anonymous users cannot use the Pro model at all
+        logger.warning("Anonymous user attempted to use Pro model.")
+        raise HTTPException(status_code=403, detail="You must be logged in and have a Pro subscription or sufficient credits to use this model.")
+    
+    model_path = MODEL_MAP.get(model_id)
+    if not model_path:
+        raise HTTPException(status_code=400, detail=f"Unsupported model selected: {model_id}")
+    
+    fireworks_api_url = f"{FIREWORKS_API_BASE_URL}{model_path}/text_to_image"
+    logger.info(f"Targeting Fireworks.ai endpoint: {fireworks_api_url}")
 
     try:
         await verify_turnstile(image_in.turnstile_token)
@@ -111,24 +172,13 @@ async def generate_image(
         logger.error(f"Turnstile verification failed: {e.detail}")
         raise e
 
-    # --- Credit consumption logic (no changes needed) ---
-    if current_user:
-        logger.info(f"Authenticated user: {current_user.email} (ID: {current_user.id})")
-        # Assuming 4 images are generated, cost might be higher. Adjust if needed.
-        generation_cost = 4 
-        if current_user.credits < generation_cost:
-            logger.warning(f"User {current_user.id} has insufficient credits.")
-            raise HTTPException(
-                status_code=402,
-                detail=f"Insufficient credits. You need {generation_cost} credits for 4 images, but you only have {current_user.credits}."
-            )
+    # --- Deduct credits if applicable ---
+    if current_user and generation_cost > 0:
         current_user.credits -= generation_cost
         current_user.credits_spent += generation_cost
         db.commit()
         db.refresh(current_user)
-        logger.info(f"Deducted {generation_cost} credit(s) from user {current_user.id}. New balance: {current_user.credits}")
-    else:
-        logger.info("Request is from an anonymous user.")
+        logger.info(f"Deducted {generation_cost} credits from user {current_user.id}. New balance: {current_user.credits}")
 
     try:
         final_prompt = construct_prompt(image_in)
@@ -136,71 +186,67 @@ async def generate_image(
         
         headers = {
             "Content-Type": "application/json",
-            "Accept": "image/png",  # Request binary image data directly
+            "Accept": "image/png",
             "Authorization": f"Bearer {settings.FIREWORKS_API_KEY}",
         }
         
-        async def generate_single_image(client: httpx.AsyncClient):
-            """Helper function to generate one image and return its base64 string."""
-            
-            # --- KEY CHANGE: Create a unique payload for each request with a random seed ---
+        async def generate_single_image(client: httpx.AsyncClient, url: str):
             payload = {
                 "prompt": final_prompt,
                 "negative_prompt": image_in.negative_prompt,
                 "width": width,
                 "height": height,
                 "samples": 1,
-                "seed": random.randint(1, 4294967295) # Use a random seed for each image
+                "seed": random.randint(1, 4294967295)
             }
-            logger.info(f"Sending payload to Fireworks.ai: {json.dumps(payload, indent=2)}")
-
-            response = await client.post(FIREWORKS_API_URL, headers=headers, json=payload)
+            response = await client.post(url, headers=headers, json=payload, timeout=180.0)
             response.raise_for_status()
-            
-            # The response content is now binary image data, not JSON.
-            # We need to encode it into base64 ourselves.
             image_bytes = await response.aread()
-            base64_encoded = base64.b64encode(image_bytes).decode('utf-8')
-            return base64_encoded
+            return base64.b64encode(image_bytes).decode('utf-8')
 
-        async with httpx.AsyncClient(timeout=180.0) as client:
-            # Create a list of tasks to run in parallel
-            generation_tasks = [generate_single_image(client) for _ in range(4)]
-            
-            # Run all generation tasks concurrently
-            logger.info("Generating 4 images in parallel with Fireworks.ai...")
+        async with httpx.AsyncClient() as client:
+            generation_tasks = [generate_single_image(client, fireworks_api_url) for _ in range(4)]
+            logger.info(f"Generating 4 images in parallel with Fireworks.ai...")
             base64_images_results = await asyncio.gather(*generation_tasks, return_exceptions=True)
             
-            # Filter out any potential errors
             successful_images_base64 = [img for img in base64_images_results if not isinstance(img, Exception)]
+
             if not successful_images_base64:
-                logger.error("All image generation tasks failed.", exc_info=base64_images_results[0])
+                first_exception = next((res for res in base64_images_results if isinstance(res, Exception)), None)
+                logger.error("All image generation tasks failed.", exc_info=first_exception)
                 raise HTTPException(status_code=500, detail="Failed to generate any images from the service.")
-            
-            logger.info(f"Job completed successfully. Received {len(successful_images_base64)} base64 images from Fireworks.ai.")
-            
-            # --- KEY CHANGE: Do not save to server disk. Return base64 directly. ---
-            # We also no longer need to save the records to the database here,
-            # as there is no persistent URL to save.
-            # If you want to log the generation, you could still do that here.
-            
-            # Prefix with data URI scheme for direct use in browser <img> tags
+
+            logger.info(f"Job completed successfully. Returning {len(successful_images_base64)} base64 images.")
+
+            # --- KEY CHANGE: Return Base64 data URLs directly ---
             image_data_urls = [f"data:image/png;base64,{b64}" for b64 in successful_images_base64]
+            
+            # Pad the results if some failed, to always return 4 images if at least one succeeded
+            if image_data_urls and len(image_data_urls) < 4:
+                logger.warning(f"Only {len(image_data_urls)} of 4 images were generated successfully. Duplicating to fill.")
+                while len(image_data_urls) < 4:
+                    image_data_urls.append(image_data_urls[0])
 
             return JSONResponse(content={"images": image_data_urls})
 
     except httpx.HTTPStatusError as e:
+        # Revert credits if the API call fails
+        if current_user and generation_cost > 0:
+            current_user.credits += generation_cost
+            current_user.credits_spent -= generation_cost
+            db.commit()
+            logger.info(f"Reverted {generation_cost} credits for user {current_user.id} due to API failure.")
         logger.error(f"HTTP error occurred while contacting Fireworks.ai: {e.response.status_code} - {e.response.text}")
         raise HTTPException(status_code=502, detail=f"Error from image generation service: {e.response.text}")
     except Exception as e:
+        # Revert credits for any other unexpected error
+        if current_user and generation_cost > 0:
+            current_user.credits += generation_cost
+            current_user.credits_spent -= generation_cost
+            db.commit()
+            logger.info(f"Reverted {generation_cost} credits for user {current_user.id} due to an unexpected error.")
         logger.error(f"An unexpected error occurred: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="An unexpected error occurred during image generation.")
 
-async def get_image(image_id: int, db: Session = Depends(get_db)):
-    db_image = crud.image.get(db, id=image_id)
-    if db_image is None:
-        raise HTTPException(status_code=404, detail="Image not found")
-    if not db_image.image_url:
-        raise HTTPException(status_code=404, detail="Image URL not available")
-
-    return Response(status_code=302, headers={"Location": db_image.image_url})
+# --- Removed my-works and related endpoints as they are no longer needed ---
+# The frontend now manages history in localStorage.

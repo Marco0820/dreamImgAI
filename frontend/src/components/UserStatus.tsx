@@ -8,20 +8,33 @@ import axios from 'axios';
 
 // 这只是一个帮助函数，它可以是 async
 const fetchCredits = async () => {
-  const { data } = await axios.get('/api/user/credits');
-  return data;
+  console.log("[UserStatus] fetchCredits started...");
+  try {
+    const { data } = await axios.get('/api/user/credits');
+    console.log("[UserStatus] fetchCredits successful, received data:", data);
+    return data;
+  } catch (error) {
+    console.error("[UserStatus] fetchCredits failed:", error);
+    throw error; // Re-throw error so react-query can handle it
+  }
 };
 
 // 但组件本身绝对不能是 async
 export default function UserStatus() {
   const { data: session, status } = useSession();
   const { t } = useTranslation('common');
+  console.log(`[UserStatus] Component rendered. Session status: ${status}`);
 
-  const { data: creditsData, isLoading: isLoadingCredits } = useQuery({
+  const { data: creditsData, isLoading: isLoadingCredits, isError } = useQuery({
     queryKey: ['userCredits'],
     queryFn: fetchCredits,
     enabled: status === 'authenticated',
+    // Optional: Add staleTime and refetchOnWindowFocus for better data freshness
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
   });
+
+  console.log(`[UserStatus] React Query state: isLoading=${isLoadingCredits}, isError=${isError}, creditsData:`, creditsData);
 
   if (status === 'loading') {
     return <div className="animate-pulse bg-gray-700 rounded-md w-36 h-8"></div>;

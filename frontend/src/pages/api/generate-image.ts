@@ -1,9 +1,25 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
+import { getToken } from 'next-auth/jwt'; // Import getToken
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     console.log("--- [generate-image] API endpoint hit ---");
     console.log("[generate-image] Request Body:", JSON.stringify(req.body, null, 2));
+
+    // --- Get the raw JWT token to pass to the backend ---
+    const token = await getToken({ req, raw: true });
+
+    const headers: { [key: string]: string } = {
+        'Content-Type': 'application/json',
+    };
+
+    if (token) {
+        // If a session token exists, add it to the Authorization header
+        headers['Authorization'] = `Bearer ${token}`;
+        console.log("[generate-image] Auth token found, adding to backend request.");
+    } else {
+        console.log("[generate-image] No auth token found, proceeding as anonymous.");
+    }
 
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method Not Allowed' });
@@ -16,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log(`[generate-image] Preparing to send request to backend at: ${fullUrl}`);
 
         const response = await axios.post(fullUrl, req.body, {
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers, // Use the new headers object
             timeout: 180000, // 3-minute timeout
         });
 
