@@ -1,54 +1,63 @@
-import NextAuth, { NextAuthOptions } from "next-auth"
-import GithubProvider from "next-auth/providers/github"
-import GoogleProvider from "next-auth/providers/google"
-import CredentialsProvider from "next-auth/providers/credentials"
+import NextAuth, { NextAuthOptions } from "next-auth";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import GithubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import * as bcrypt from 'bcryptjs';
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
-import { JWT } from "next-auth/jwt";
+import { encode, decode } from "next-auth/jwt";
 
-// --- Custom JWT handling to ensure it's a signed JWS, not an encrypted JWE ---
-import { getToken } from "next-auth/jwt";
-const secret = process.env.NEXTAUTH_SECRET;
+// Ensure the secret is a string
+const secret = process.env.NEXTAUTH_SECRET as string;
 
 export const authOptions: NextAuthOptions = {
+  // Use the correct PrismaAdapter that is compatible with NextAuth v4
   adapter: PrismaAdapter(prisma),
   providers: [
-    // ... (your existing providers)
+    GithubProvider({
+      clientId: process.env.GITHUB_ID as string,
+      clientSecret: process.env.GITHUB_SECRET as string,
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    }),
+    CredentialsProvider({
+        name: 'Credentials',
+        credentials: {
+          email: { label: "Email", type: "text" },
+          password: { label: "Password", type: "password" }
+        },
+        async authorize(credentials) {
+            if (!credentials?.email || !credentials.password) {
+                return null;
+            }
+            const user = await prisma.user.findUnique({
+                where: { email: credentials.email }
+            });
+
+            if (user && user.password && await bcrypt.compare(credentials.password, user.password)) {
+                return { id: user.id, name: user.name, email: user.email, image: user.image };
+            }
+            return null;
+        }
+    })
   ],
   session: {
     strategy: "jwt",
   },
   // --- KEY FIX: Force NextAuth to use JWS (signed) instead of JWE (encrypted) ---
   jwt: {
-    // A secret to use for signing Key generation (you should set this!)
-    secret: process.env.NEXTAUTH_SECRET,
-    // The maximum age of the JWT in seconds.
-    maxAge: 60 * 60 * 24 * 30, // 30 days
-    // The signing algorithm.
-    async encode({ secret, token }) {
-      // Use the jwt.encode method to create a JWS
-      return await getToken({
-        template: {
-          ...token,
-        },
-        secret,
-        encryption: false, // This is the crucial part to disable encryption
-      });
+    secret: secret,
+    encode: async ({ secret, token }) => {
+      // The signing algorithm is implicitly HS256 by default when using a secret.
+      // The encode function from next-auth/jwt handles this.
+      return encode({ token, secret });
     },
-    async decode({ secret, token }) {
-      if (!token) {
-        throw new Error("No token to decode");
-      }
-      // Use the jwt.decode method to verify and decode the JWS
-      return await getToken({
-        token,
-        secret,
-        encryption: false,
-        verificationOptions: {
-          algorithms: ["HS256"],
-        },
-      });
+    decode: async ({ secret, token }) => {
+      // The decode function also uses the same defaults.
+      if (!token) throw new Error("No token to decode");
+      return decode({ token, secret });
     },
   },
   callbacks: {
@@ -58,9 +67,15 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    // ... (any other callbacks you might have)
+    // The jwt callback is important to attach the user ID to the token
+    async jwt({ token, user }) {
+        if (user) {
+            token.sub = user.id;
+        }
+        return token;
+    }
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: secret,
 };
 
 export default NextAuth(authOptions);
