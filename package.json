@@ -13,6 +13,7 @@
     "sonner": "^2.0.5"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "eslint": "^9.29.0"
   }
 }

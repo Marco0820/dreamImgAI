@@ -187,6 +187,7 @@ const SDXLGenerator = () => {
   // Turnstile state
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileSiteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
+  console.log('Attempting to read Turnstile Site Key:', turnstileSiteKey);
   const isTurnstileMisconfigured = !turnstileSiteKey || turnstileSiteKey === 'YOUR_TURNSTILE_SITE_KEY';
 
   interface StyleOption {
@@ -205,6 +206,7 @@ const SDXLGenerator = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("handleSubmit triggered");
 
     const model = availableModels.find(m => m.id === selectedModel);
     if (model?.paid && session?.user?.creemPriceId !== 'price_ultimate') {
@@ -236,7 +238,7 @@ const SDXLGenerator = () => {
     }
 
     setIsGenerating(true);
-    setGeneratedImages(Array(1).fill({ status: 'loading' }));
+    setGeneratedImages(Array(4).fill({ status: 'loading' })); // Show 4 loading placeholders
 
     let image_b64 = null;
     if (uploadedImage.file) {
@@ -264,17 +266,23 @@ const SDXLGenerator = () => {
             model: selectedModel
         };
         
+        console.log("Calling API endpoint:", endpoint, "with payload:", payload);
+
         const generateResponse = await axios.post(endpoint, payload);
-        const imageUrl = generateResponse.data.image;
+        const imageUrls = generateResponse.data.images; // Expect an array of images
 
-        if (!imageUrl) throw new Error('No image URL returned.');
+        if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
+            throw new Error('No image URLs returned or response format is incorrect.');
+        }
 
-        const newImage: GeneratedImage = { status: 'done', url: imageUrl };
-        setGeneratedImages([newImage]); // Directly set the single image
+        const newImages: GeneratedImage[] = imageUrls.map((url: string) => ({ status: 'done', url }));
+        setGeneratedImages(newImages);
         
-        const updatedHistory = [{ url: imageUrl, prompt: finalPrompt, timestamp: Date.now() }, ...history];
+        // Add all new images to history
+        const historyUpdates = imageUrls.map((url: string) => ({ url, prompt: finalPrompt, timestamp: Date.now() }));
+        const updatedHistory = [...historyUpdates, ...history];
         setHistory(updatedHistory);
-        localStorage.setItem('generatedImagesHistory', JSON.stringify(updatedHistory));
+        // localStorage.setItem('generatedImagesHistory', JSON.stringify(updatedHistory)); // <-- KEY CHANGE: Remove this line to prevent storage quota errors.
 
     } catch (error: any) {
       const err = error as any;
@@ -292,16 +300,21 @@ const SDXLGenerator = () => {
         toast.error(errorMessage);
       }
       
-      setGeneratedImages(Array(1).fill({ status: 'error', error: t('generator.generation_failed') }));
+      setGeneratedImages(Array(4).fill({ status: 'error', error: t('generator.generation_failed') })); // Show 4 error placeholders
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleDownload = (url: string) => {
-    if (!url) return;
-    // Use the new API route to handle the download
-    window.location.href = `/api/download-image?url=${encodeURIComponent(url)}`;
+  const handleDownload = (dataUrl: string) => {
+    if (!dataUrl) return;
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    // Generate a random filename
+    link.download = `dreamimg-${Math.random().toString(36).substring(7)}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleOpenPreview = (url: string) => {
@@ -429,7 +442,7 @@ const SDXLGenerator = () => {
                   {uploadedImage.url && (
                     <div className="w-1/3 md:w-1/4 space-y-4 flex-shrink-0">
                       <div className="aspect-square bg-stone-900/50 rounded-lg flex items-center justify-center overflow-hidden relative group">
-                        <img src={uploadedImage.url} alt="Uploaded reference" className="w-full h-full object-cover" />
+                        <img src={uploadedImage.url} alt="Uploaded reference" className="w-full h-full object-contain" />
                          <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={clearImage}>
                             <X className="h-4 w-4" />
                         </Button>
@@ -566,7 +579,7 @@ const SDXLGenerator = () => {
                         <img
                           src={image.url}
                           alt={`${t('generator.alt_text_prefix', 'Generated image')} ${index + 1}`}
-                          className="object-cover w-full h-full rounded-lg cursor-pointer"
+                          className="object-contain w-full h-full rounded-lg cursor-pointer"
                           onClick={() => handleOpenPreview(image.url!)}
                         />
                         <div className="absolute bottom-2 right-2 transition-opacity">
@@ -594,11 +607,11 @@ const SDXLGenerator = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {generatedImages.map((image, index) => (
                     image.status === 'done' && image.url && (
-                      <div key={index} className="group relative">
+                      <div key={index} className="group relative aspect-square">
                         <img
                           src={image.url}
                           alt={`${t('generator.alt_text_prefix', 'Generated image')} ${index + 1}`}
-                          className="object-cover w-full h-full rounded-lg cursor-pointer"
+                          className="object-contain w-full h-full rounded-lg cursor-pointer"
                           onClick={() => handleOpenPreview(image.url!)}
                         />
                         <div className="absolute bottom-2 right-2 transition-opacity">
@@ -700,7 +713,7 @@ const SDXLGenerator = () => {
                     <X className="h-4 w-4" />
                 </Button>
               </div>
-              <img src={previewImage} alt="Preview" className="object-cover w-full h-full" />
+              <img src={previewImage} alt="Preview" className="object-contain w-full h-full" />
            </DialogContent>
          </Dialog>
       )}

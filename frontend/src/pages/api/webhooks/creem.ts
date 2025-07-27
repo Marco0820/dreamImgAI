@@ -77,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // 3. Use the correct paths for userId and priceId
         const userId = checkoutObject.metadata?.userId;
-        const priceId = checkoutObject.product?.id;
+        const priceId = checkoutObject.product_id; // Corrected from `product.id`
         
         console.log(`[creem-webhook] Extracted from session - UserID: ${userId}, PriceID: ${priceId}`);
 

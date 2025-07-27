@@ -13,12 +13,8 @@ class Config(BaseSettings):
     PROJECT_NAME: str = "DreamImg AI"
     API_V1_STR: str = "/api/v1"
 
-    # Database settings
-    POSTGRES_SERVER: str = "localhost"
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres"
-    POSTGRES_DB: str = "app"
-    DATABASE_URL: str = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}/{POSTGRES_DB}"
+    # Database settings - We will now read the full URL directly from the .env file
+    DATABASE_URL: str
 
     # Tencent Cloud API Credentials
     TENCENT_SECRET_ID: Optional[str] = None
@@ -27,8 +23,8 @@ class Config(BaseSettings):
     # TTAPI Key
     TTAPI_KEY: str = os.getenv("TTAPI_KEY", "your_ttapi_key_here")
 
-    # Runware.ai Configuration
-    RUNWARE_API_KEY: str = os.getenv("RUNWARE_API_KEY", "4gsvXDNnSNHPbx1LlHKnYaHmSnEwmi8o")
+    # Fireworks.ai API Key
+    FIREWORKS_API_KEY: Optional[str] = None
 
     # Cloudflare Turnstile
     CLOUDFLARE_TURNSTILE_SECRET_KEY: str = os.getenv("CLOUDFLARE_TURNSTILE_SECRET_KEY", "your_secret_key_here")

@@ -9,9 +9,10 @@ from PIL import Image
 from io import BytesIO
 import time
 import httpx
-from typing import Optional
+from typing import Optional, List
 import asyncio
 import uuid
+import random
 
 from app.core.config import settings
 from app.api import dependencies as deps
@@ -26,7 +27,8 @@ router = APIRouter()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-RUNWARE_API_URL = "https://api.runware.ai/v1"
+# --- Fireworks.ai API Configuration ---
+FIREWORKS_API_URL = "https://api.fireworks.ai/inference/v1/workflows/accounts/fireworks/models/flux-1-schnell-fp8/text_to_image"
 
 async def verify_turnstile(token: str):
     if not token:
@@ -50,7 +52,6 @@ def construct_prompt(data: schemas.ImageCreate) -> str:
         'Color': data.color,
         'Lighting': data.lighting,
         'Composition': data.composition,
-        'Aspect Ratio': data.aspect_ratio,
     }
 
     for key, value in style_map.items():
@@ -67,119 +68,132 @@ async def healthcheck():
     logger.info("Healthcheck endpoint was hit!")
     return {"status": "ok"}
 
-@router.post("/generate/", response_class=JSONResponse, summary="Generate Image with Runware.ai Flux")
+def parse_aspect_ratio(ratio_str: Optional[str]) -> (int, int):
+    """Parses aspect ratio string like '1:1' into (width, height). Defaults to 1024x1024."""
+    if not ratio_str or ':' not in ratio_str:
+        return 1152, 896 # Default to a larger size
+
+    # A mapping of aspect ratios to supported resolutions
+    # As per Fireworks.ai docs for FLUX.1 - adjusted for larger sizes
+    resolutions = {
+        "1:1": (1024, 1024),    # Kept as square
+        "16:9": (1344, 768),
+        "9:16": (768, 1344),
+        "21:9": (1536, 640),
+        "9:21": (640, 1536),
+        "2:3": (896, 1152),   # A taller option
+        "3:2": (1152, 896),   # A wider option
+        "4:5": (896, 1152),
+        "5:4": (1152, 896),
+    }
+    
+    return resolutions.get(ratio_str, (1152, 896))
+
+@router.post("/generate/", response_class=JSONResponse, summary="Generate Image with Fireworks.ai FLUX.1")
 async def generate_image(
     image_in: schemas.ImageCreate, 
     db: Session = Depends(get_db),
     current_user: User = Depends(deps.get_current_user_optional),
 ):
     """
-    Generate an image based on the provided prompt using Runware.ai Flux API.
-    This endpoint supports text-to-image generation.
+    Generate an image based on the provided prompt using Fireworks.ai FLUX.1 API.
     """
-    await verify_turnstile(image_in.turnstile_token)
-    
-    # --- Credit consumption logic ---
+    logger.info("--- [/generate] Endpoint hit (Fireworks.ai) ---")
+    logger.info(f"Received request body: {image_in.model_dump_json(indent=2)}")
+
+    if not settings.FIREWORKS_API_KEY:
+        raise HTTPException(status_code=500, detail="Fireworks API key is not configured on the server.")
+
+    try:
+        await verify_turnstile(image_in.turnstile_token)
+        logger.info("Turnstile verification successful.")
+    except HTTPException as e:
+        logger.error(f"Turnstile verification failed: {e.detail}")
+        raise e
+
+    # --- Credit consumption logic (no changes needed) ---
     if current_user:
-        generation_cost = 1 # Define cost per generation
+        logger.info(f"Authenticated user: {current_user.email} (ID: {current_user.id})")
+        # Assuming 4 images are generated, cost might be higher. Adjust if needed.
+        generation_cost = 4 
         if current_user.credits < generation_cost:
+            logger.warning(f"User {current_user.id} has insufficient credits.")
             raise HTTPException(
                 status_code=402,
-                detail=f"Insufficient credits. You need {generation_cost} credits, but you only have {current_user.credits}."
+                detail=f"Insufficient credits. You need {generation_cost} credits for 4 images, but you only have {current_user.credits}."
             )
         current_user.credits -= generation_cost
         current_user.credits_spent += generation_cost
         db.commit()
         db.refresh(current_user)
         logger.info(f"Deducted {generation_cost} credit(s) from user {current_user.id}. New balance: {current_user.credits}")
+    else:
+        logger.info("Request is from an anonymous user.")
 
     try:
-        user_id_for_db = current_user.id if current_user else None
         final_prompt = construct_prompt(image_in)
+        width, height = parse_aspect_ratio(image_in.aspect_ratio)
         
-        # Map frontend model ID to Runware.ai model ID
-        model_map = {
-            "tt-flux1-schnell": "black-forest-labs/FLUX.1-schnell",
-            "flux1-dev": "black-forest-labs/FLUX.1-dev",
-            "tt-flux1-pro": "black-forest-labs/FLUX.1-pro", # Assuming Pro model exists on Runware
-            "seedream3": "seedream3", # Placeholder
-        }
-        runware_model_id = model_map.get(image_in.model, "black-forest-labs/FLUX.1-schnell")
-
         headers = {
             "Content-Type": "application/json",
-            "Accept": "application/json",
+            "Accept": "image/png",  # Request binary image data directly
+            "Authorization": f"Bearer {settings.FIREWORKS_API_KEY}",
         }
         
-        task_uuid = str(uuid.uuid4())
-        
-        payload = [
-            {"taskType": "authentication", "apiKey": settings.RUNWARE_API_KEY},
-            {
-                "taskType": "imageInference",
-                "taskUUID": task_uuid,
-                "positivePrompt": final_prompt,
-                "negativePrompt": image_in.negative_prompt,
-                "model": runware_model_id,
-                "height": 1024, # Example value, adjust as needed
-                "width": 1024,  # Example value, adjust as needed
-                "numberResults": 1,
+        async def generate_single_image(client: httpx.AsyncClient):
+            """Helper function to generate one image and return its base64 string."""
+            
+            # --- KEY CHANGE: Create a unique payload for each request with a random seed ---
+            payload = {
+                "prompt": final_prompt,
+                "negative_prompt": image_in.negative_prompt,
+                "width": width,
+                "height": height,
+                "samples": 1,
+                "seed": random.randint(1, 4294967295) # Use a random seed for each image
             }
-        ]
-        
-        logger.info(f"Sending payload to Runware.ai: {json.dumps(payload, indent=2)}")
+            logger.info(f"Sending payload to Fireworks.ai: {json.dumps(payload, indent=2)}")
 
-        async with httpx.AsyncClient(timeout=180.0) as client: # Increased timeout for direct generation
-            logger.info(f"Submitting job to Runware.ai with model {runware_model_id}")
-            response = await client.post(RUNWARE_API_URL, headers=headers, json=payload)
+            response = await client.post(FIREWORKS_API_URL, headers=headers, json=payload)
             response.raise_for_status()
             
-            job_data = response.json()
-            
-            if "errors" in job_data:
-                error_msg = job_data["errors"][0].get("message", "Unknown API error")
-                raise HTTPException(status_code=500, detail=f"Failed to generate image with Runware.ai: {error_msg}")
+            # The response content is now binary image data, not JSON.
+            # We need to encode it into base64 ourselves.
+            image_bytes = await response.aread()
+            base64_encoded = base64.b64encode(image_bytes).decode('utf-8')
+            return base64_encoded
 
-            if job_data.get("data") and job_data["data"][0].get("imageURL"):
-                result_data = job_data["data"][0]
-                image_url = result_data.get("imageURL")
-                
-                logger.info(f"Job completed successfully. TaskUUID: {task_uuid}. Image URL: {image_url}")
-                
-                crud.image.create_with_owner(
-                    db=db,
-                    prompt=image_in.prompt, 
-                    user_id=user_id_for_db,
-                    image_url=image_url
-                )
-                return JSONResponse(content={"image": image_url})
-            else:
-                logger.error(f"Runware.ai response is missing expected data: {job_data}")
-                raise HTTPException(status_code=500, detail="Runware.ai job succeeded but the response was malformed.")
+        async with httpx.AsyncClient(timeout=180.0) as client:
+            # Create a list of tasks to run in parallel
+            generation_tasks = [generate_single_image(client) for _ in range(4)]
+            
+            # Run all generation tasks concurrently
+            logger.info("Generating 4 images in parallel with Fireworks.ai...")
+            base64_images_results = await asyncio.gather(*generation_tasks, return_exceptions=True)
+            
+            # Filter out any potential errors
+            successful_images_base64 = [img for img in base64_images_results if not isinstance(img, Exception)]
+            if not successful_images_base64:
+                logger.error("All image generation tasks failed.", exc_info=base64_images_results[0])
+                raise HTTPException(status_code=500, detail="Failed to generate any images from the service.")
+            
+            logger.info(f"Job completed successfully. Received {len(successful_images_base64)} base64 images from Fireworks.ai.")
+            
+            # --- KEY CHANGE: Do not save to server disk. Return base64 directly. ---
+            # We also no longer need to save the records to the database here,
+            # as there is no persistent URL to save.
+            # If you want to log the generation, you could still do that here.
+            
+            # Prefix with data URI scheme for direct use in browser <img> tags
+            image_data_urls = [f"data:image/png;base64,{b64}" for b64 in successful_images_base64]
+
+            return JSONResponse(content={"images": image_data_urls})
 
     except httpx.HTTPStatusError as e:
-        logger.error(f"HTTP error occurred while contacting Runware.ai: {e.response.status_code} - {e.response.text}")
-        logger.error(f"Request that failed: {e.request.method} {e.request.url}")
-        
-        # Try to parse the error for a more specific message
-        try:
-            error_data = e.response.json()
-            if "errors" in error_data and error_data["errors"]:
-                error_code = error_data["errors"][0].get("code")
-                if error_code == "insufficientCredits":
-                    raise HTTPException(
-                        status_code=402, # Payment Required
-                        detail="Insufficient credits on Runware.ai. Please top up your account to continue generating images."
-                    )
-        except Exception:
-            # Not a JSON response or malformed, fall back to generic error
-            pass
-            
+        logger.error(f"HTTP error occurred while contacting Fireworks.ai: {e.response.status_code} - {e.response.text}")
         raise HTTPException(status_code=502, detail=f"Error from image generation service: {e.response.text}")
     except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
+        logger.error(f"An unexpected error occurred: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="An unexpected error occurred during image generation.")
 
 async def get_image(image_id: int, db: Session = Depends(get_db)):
