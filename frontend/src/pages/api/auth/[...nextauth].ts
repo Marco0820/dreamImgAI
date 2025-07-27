@@ -61,18 +61,27 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
+    // This callback is called whenever a JWT is created (i.e. at sign in)
+    // or updated (i.e. whenever a session is accessed in the client).
+    async jwt({ token, user, account }) {
+      // Persist the user's ID and other data to the token right after sign-in
+      if (account && user) {
+        token.id = user.id;
+        // Also persist subscription status to the token
+        const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+        token.creemPriceId = dbUser?.creemPriceId;
+      }
+      return token;
+    },
+    // This callback is called whenever a session is checked.
+    // We forward data from the token to the session object.
     async session({ session, token }) {
+      // The token now contains the data we persisted in the `jwt` callback
       if (token && session.user) {
-        session.user.id = token.sub as string;
+          session.user.id = token.id as string;
+          session.user.creemPriceId = token.creemPriceId as string | null;
       }
       return session;
-    },
-    // The jwt callback is important to attach the user ID to the token
-    async jwt({ token, user }) {
-        if (user) {
-            token.sub = user.id;
-        }
-        return token;
     }
   },
   secret: secret,

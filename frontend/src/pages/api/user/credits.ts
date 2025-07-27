@@ -21,6 +21,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const userId = session.user.id;
   console.log(`[user/credits] Session found for user ID: ${userId}. Fetching credits from DB...`);
+  
+  // --- KEY FIX: Add defensive check for userId ---
+  if (!userId) {
+    console.error(`[user/credits] Critical error: Session exists but user ID is undefined.`);
+    return res.status(400).json({ error: 'Invalid session: User ID is missing.' });
+  }
 
   try {
     const user = await prisma.user.findUnique({

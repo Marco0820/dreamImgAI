@@ -226,7 +226,15 @@ const SDXLGenerator = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("handleSubmit triggered");
+    console.log("[SDXLGenerator] handleSubmit triggered");
+
+    // --- DIAGNOSTIC LOGS ---
+    console.log("[SDXLGenerator] Verifying session state before API call...");
+    console.log(`[SDXLGenerator] Session status: ${session ? 'Exists' : 'Does not exist'}`);
+    if(session) {
+      console.log("[SDXLGenerator] Session details:", JSON.stringify(session, null, 2));
+    }
+    // --- END DIAGNOSTIC LOGS ---
 
     // This client-side check is removed. The backend is the single source of truth
     // for authorization and will respond with a 402 or 403 status if the user
