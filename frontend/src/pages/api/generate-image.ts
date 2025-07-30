@@ -1,46 +1,44 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
-import { getToken } from 'next-auth/jwt'; // Import getToken
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "./auth/[...nextauth]"
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    console.log("--- [generate-image] API endpoint hit ---");
-    console.log("[generate-image] Request Body:", JSON.stringify(req.body, null, 2));
+  console.log("--- [generate-image] API endpoint hit (with session verification) ---");
 
-    // --- Get the raw JWT token to pass to the backend ---
-    const token = await getToken({ req, raw: true });
+  const session = await getServerSession(req, res, authOptions);
 
-    const headers: { [key: string]: string } = {
-        'Content-Type': 'application/json',
-    };
+  // --- KEY CHANGE: Verify session on the server-side first ---
+  if (!session || !session.user || !session.user.id) {
+    console.warn("[generate-image] Unauthorized: No valid session or user ID found.");
+    return res.status(401).json({ error: "Unauthorized: Please log in." });
+  }
 
-    if (token) {
-        // If a session token exists, add it to the Authorization header
-        headers['Authorization'] = `Bearer ${token}`;
-        console.log("[generate-image] Auth token found, adding to backend request.");
-    } else {
-        console.log("[generate-image] No auth token found, proceeding as anonymous.");
-    }
+  const headers: { [key: string]: string } = {
+    'Content-Type': 'application/json',
+    // --- KEY CHANGE: Pass verified user info in headers to the backend ---
+    'X-User-Id': session.user.id,
+  };
+  if (session.user.email) {
+    headers['X-User-Email'] = session.user.email;
+  }
 
-    if (req.method !== 'POST') {
-        return res.status(405).json({ message: 'Method Not Allowed' });
-    }
+  console.log(`[generate-image] Session verified for user ID: ${session.user.id}. Forwarding to backend.`);
 
-    try {
-        const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
-        const fullUrl = `${backendUrl}/api/v1/images/generate/`;
-        
-        console.log(`[generate-image] Preparing to send request to backend at: ${fullUrl}`);
+  try {
+    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+    const fullUrl = `${backendUrl}/api/v1/images/generate/`;
+    
+    // The original request body from the client is passed through
+    const response = await axios.post(fullUrl, req.body, {
+      headers: headers,
+      timeout: 180000,
+    });
+    
+    res.status(200).json(response.data);
 
-        const response = await axios.post(fullUrl, req.body, {
-            headers: headers, // Use the new headers object
-            timeout: 180000, // 3-minute timeout
-        });
-
-        console.log("[generate-image] Successfully received response from backend.");
-        res.status(200).json(response.data);
-
-    } catch (error: any) {
-        console.error('--- [generate-image] An error occurred while proxying to the backend ---');
+  } catch (error: any) {
+    console.error('--- [generate-image] An error occurred while proxying to the backend ---');
         
         if (axios.isAxiosError(error)) {
             console.error(`[generate-image] Axios error code: ${error.code}`);
@@ -65,5 +63,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             message: 'Failed to communicate with the image generation service.',
             error: error.code || 'UNKNOWN_ERROR'
         });
-    }
+  }
 } 

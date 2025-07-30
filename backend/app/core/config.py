@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
-from typing import Optional
+from typing import Optional, List, Union
 
 class Config(BaseSettings):
     # Pydantic V2 configuration using model_config dictionary
@@ -12,6 +12,9 @@ class Config(BaseSettings):
 
     PROJECT_NAME: str = "DreamImg AI"
     API_V1_STR: str = "/api/v1"
+    
+    # CORS Origins
+    BACKEND_CORS_ORIGINS: Union[str, List[str]] = "http://localhost:3000,http://127.0.0.1:3000"
 
     # Database settings - We will now read the full URL directly from the .env file
     DATABASE_URL: str

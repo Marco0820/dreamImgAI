@@ -37,7 +37,8 @@ MODEL_MAP = {
     "flux1-dev": "fireworks/models/flux-1-dev-fp8", 
     
     # Community hosted models require the specific account path
-    "tt-flux1-pro": "black-forest-labs/models/FLUX.1-pro",
+    # --- KEY CHANGE: Updated the Pro model to point to the requested dev model ---
+    "tt-flux1-pro": "fireworks/models/flux-1-dev-fp8",
     "seedream3": "fal-ai/models/seedream-3.0",
 }
 
@@ -104,20 +105,18 @@ def parse_aspect_ratio(ratio_str: Optional[str]) -> (int, int):
 async def generate_image(
     request: Request, # Add Request to the function signature
     image_in: schemas.ImageCreate, 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(deps.get_current_user_optional) # <-- CORRECT way to use dependency
 ):
     """
     Generate an image based on the provided prompt using Fireworks.ai FLUX.1 API.
     Images are returned as Base64 data URLs and are not stored on the server.
     """
-    # --- Manual Dependency Resolution ---
-    # Manually call the dependency with the required arguments
-    current_user = deps.get_current_user_optional(request=request, db=db)
-    
-    logger.info("--- [/generate] Endpoint hit (Fireworks.ai) ---")
-    logger.info(f"Received request body: {image_in.model_dump_json(indent=2)}")
+    print(f"\n[BACKEND] images.py: --- [/generate] Endpoint hit ---")
+    print(f"[BACKEND] images.py: Received request body: {image_in.model_dump_json(indent=2)}")
 
     if not settings.FIREWORKS_API_KEY:
+        print("[BACKEND] images.py: CRITICAL: Fireworks API key is not configured on the server.")
         raise HTTPException(status_code=500, detail="Fireworks API key is not configured on the server.")
 
     model_id = image_in.model or "tt-flux1-schnell"
@@ -125,17 +124,17 @@ async def generate_image(
 
     # --- Credit and Subscription Logic ---
     if current_user:
-        logger.info(f"Authenticated user: {current_user.email} (ID: {current_user.id}). Credits: {current_user.credits}")
+        print(f"[BACKEND] images.py: Authenticated user: {current_user.email} (ID: {current_user.id}). Credits: {current_user.credits}")
         
         is_pro_model = model_id == "tt-flux1-pro"
         has_pro_subscription = current_user.creem_price_id == 'price_ultimate'
 
         # Pro model logic: requires subscription OR sufficient credits
         if is_pro_model and not has_pro_subscription:
-            logger.info("User wants Pro model but lacks subscription. Checking credits as fallback.")
+            print("[BACKEND] images.py: User wants Pro model but lacks subscription. Checking credits as fallback.")
             generation_cost = 20 # Pro model costs more credits
             if current_user.credits < generation_cost:
-                logger.warning(f"User {current_user.id} has insufficient credits for Pro model.")
+                print(f"[BACKEND] images.py: WARNING: User {current_user.id} has insufficient credits for Pro model.")
                 raise HTTPException(
                     status_code=402, # 402 Payment Required
                     detail=f"Using the Pro model without a subscription costs {generation_cost} credits, but you only have {current_user.credits}."
@@ -143,7 +142,7 @@ async def generate_image(
         # Standard model logic: just check credits
         elif not is_pro_model:
             if current_user.credits < generation_cost:
-                logger.warning(f"User {current_user.id} has insufficient credits for standard model.")
+                print(f"[BACKEND] images.py: WARNING: User {current_user.id} has insufficient credits for standard model.")
                 raise HTTPException(
                     status_code=402,
                     detail=f"Insufficient credits. You need {generation_cost} credits for 4 images, but you only have {current_user.credits}."
@@ -151,34 +150,36 @@ async def generate_image(
         # If user has Pro subscription, generation is free (cost is 0)
         else: # is_pro_model and has_pro_subscription
              generation_cost = 0
-             logger.info("User has Pro subscription. Generation is free.")
+             print("[BACKEND] images.py: User has Pro subscription. Generation is free.")
 
     elif model_id == "tt-flux1-pro":
         # Anonymous users cannot use the Pro model at all
-        logger.warning("Anonymous user attempted to use Pro model.")
+        print("[BACKEND] images.py: WARNING: Anonymous user attempted to use Pro model.")
         raise HTTPException(status_code=403, detail="You must be logged in and have a Pro subscription or sufficient credits to use this model.")
     
     model_path = MODEL_MAP.get(model_id)
     if not model_path:
+        print(f"[BACKEND] images.py: ERROR: Unsupported model selected: {model_id}")
         raise HTTPException(status_code=400, detail=f"Unsupported model selected: {model_id}")
     
     fireworks_api_url = f"{FIREWORKS_API_BASE_URL}{model_path}/text_to_image"
-    logger.info(f"Targeting Fireworks.ai endpoint: {fireworks_api_url}")
+    print(f"[BACKEND] images.py: Targeting Fireworks.ai endpoint: {fireworks_api_url}")
 
     try:
         await verify_turnstile(image_in.turnstile_token)
-        logger.info("Turnstile verification successful.")
+        print("[BACKEND] images.py: Turnstile verification successful.")
     except HTTPException as e:
-        logger.error(f"Turnstile verification failed: {e.detail}")
+        print(f"[BACKEND] images.py: ERROR: Turnstile verification failed: {e.detail}")
         raise e
 
     # --- Deduct credits if applicable ---
     if current_user and generation_cost > 0:
+        print(f"[BACKEND] images.py: Attempting to deduct {generation_cost} credits from user {current_user.id}...")
         current_user.credits -= generation_cost
         current_user.credits_spent += generation_cost
         db.commit()
         db.refresh(current_user)
-        logger.info(f"Deducted {generation_cost} credits from user {current_user.id}. New balance: {current_user.credits}")
+        print(f"[BACKEND] images.py: Deducted {generation_cost} credits. New balance: {current_user.credits}")
 
     try:
         final_prompt = construct_prompt(image_in)
@@ -199,31 +200,33 @@ async def generate_image(
                 "samples": 1,
                 "seed": random.randint(1, 4294967295)
             }
+            print(f"[BACKEND] images.py: Sending request to Fireworks.ai with payload: {json.dumps(payload, indent=2)}")
             response = await client.post(url, headers=headers, json=payload, timeout=180.0)
+            print(f"[BACKEND] images.py: Received response from Fireworks.ai with status: {response.status_code}")
             response.raise_for_status()
             image_bytes = await response.aread()
             return base64.b64encode(image_bytes).decode('utf-8')
 
         async with httpx.AsyncClient() as client:
             generation_tasks = [generate_single_image(client, fireworks_api_url) for _ in range(4)]
-            logger.info(f"Generating 4 images in parallel with Fireworks.ai...")
+            print(f"[BACKEND] images.py: Generating 4 images in parallel with Fireworks.ai...")
             base64_images_results = await asyncio.gather(*generation_tasks, return_exceptions=True)
             
             successful_images_base64 = [img for img in base64_images_results if not isinstance(img, Exception)]
 
             if not successful_images_base64:
                 first_exception = next((res for res in base64_images_results if isinstance(res, Exception)), None)
-                logger.error("All image generation tasks failed.", exc_info=first_exception)
+                print(f"[BACKEND] images.py: ERROR: All image generation tasks failed. First exception: {first_exception}")
                 raise HTTPException(status_code=500, detail="Failed to generate any images from the service.")
 
-            logger.info(f"Job completed successfully. Returning {len(successful_images_base64)} base64 images.")
+            print(f"[BACKEND] images.py: Job completed successfully. Returning {len(successful_images_base64)} base64 images.")
 
             # --- KEY CHANGE: Return Base64 data URLs directly ---
             image_data_urls = [f"data:image/png;base64,{b64}" for b64 in successful_images_base64]
             
             # Pad the results if some failed, to always return 4 images if at least one succeeded
             if image_data_urls and len(image_data_urls) < 4:
-                logger.warning(f"Only {len(image_data_urls)} of 4 images were generated successfully. Duplicating to fill.")
+                print(f"[BACKEND] images.py: WARNING: Only {len(image_data_urls)} of 4 images were generated. Duplicating to fill.")
                 while len(image_data_urls) < 4:
                     image_data_urls.append(image_data_urls[0])
 
@@ -235,8 +238,8 @@ async def generate_image(
             current_user.credits += generation_cost
             current_user.credits_spent -= generation_cost
             db.commit()
-            logger.info(f"Reverted {generation_cost} credits for user {current_user.id} due to API failure.")
-        logger.error(f"HTTP error occurred while contacting Fireworks.ai: {e.response.status_code} - {e.response.text}")
+            print(f"[BACKEND] images.py: Reverted {generation_cost} credits for user {current_user.id} due to API failure.")
+        print(f"[BACKEND] images.py: ERROR: HTTP error occurred while contacting Fireworks.ai: {e.response.status_code} - {e.response.text}")
         raise HTTPException(status_code=502, detail=f"Error from image generation service: {e.response.text}")
     except Exception as e:
         # Revert credits for any other unexpected error
@@ -244,8 +247,8 @@ async def generate_image(
             current_user.credits += generation_cost
             current_user.credits_spent -= generation_cost
             db.commit()
-            logger.info(f"Reverted {generation_cost} credits for user {current_user.id} due to an unexpected error.")
-        logger.error(f"An unexpected error occurred: {e}", exc_info=True)
+            print(f"[BACKEND] images.py: Reverted {generation_cost} credits for user {current_user.id} due to an unexpected error.")
+        print(f"[BACKEND] images.py: ERROR: An unexpected error occurred: {e}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred during image generation.")
 
 # --- Removed my-works and related endpoints as they are no longer needed ---

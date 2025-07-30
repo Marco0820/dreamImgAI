@@ -1,2 +1,2 @@
-from .user import get_user
-from . import image 
+from .user import user
+from .image import image 

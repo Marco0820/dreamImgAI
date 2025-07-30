@@ -46,3 +46,21 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_credit_packages_id'), table_name='credit_packages')
     op.drop_table('credit_packages')
     # ### end Alembic commands ###
+
+# ... existing code ...
+def upgrade():
+    # 检查表是否已经存在
+    if not op.get_bind().dialect.has_table(op.get_bind(), 'credit_packages'):
+        op.create_table(
+            'credit_packages',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('name', sa.String(), nullable=False),
+            sa.Column('description', sa.String()),
+            sa.Column('price_id', sa.String(), nullable=False),
+            sa.Column('credits_amount', sa.Integer(), nullable=False),
+            sa.Column('price_display', sa.String()),
+            sa.Column('is_popular', sa.Boolean()),
+            sa.Column('is_active', sa.Boolean()),
+            sa.PrimaryKeyConstraint('id')
+        )
+# ... existing code ...

@@ -6,7 +6,7 @@ import logging
 
 from app.core.config import settings
 from app.database import get_db
-from app import crud
+from app import crud, models, schemas
 from app.models.user import User
 
 # --- FIX: Initialize the logger for this module ---
@@ -63,62 +63,45 @@ def get_current_user(
     
     return user
 
-# --- KEY CHANGE: Implementing the robust JWT validation logic from your guide ---
-def get_current_user_optional(
-    request: Request,
+# --- KEY CHANGE: Prioritize reading user ID from header as per your guide ---
+async def get_current_user_optional(
     db: Session = Depends(get_db),
-) -> Optional[User]:
-    try:
-        authorization = request.headers.get("Authorization")
-        if not authorization:
-            logger.info("No Authorization header found, proceeding as anonymous.")
-            return None
-            
-        if not authorization.startswith("Bearer "):
-            logger.warning(f"Invalid Authorization header format: {authorization}")
-            return None
-            
-        token = authorization.replace("Bearer ", "")
-        
-        # Rigorous check for token format
-        if not token or len(token.split('.')) != 3:
-            logger.error(f"Invalid JWT token format received: {token}")
-            return None
+    x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
+    x_user_email: Optional[str] = Header(None, alias="X-User-Email"),
+) -> Optional[models.User]:
+    """
+    Dependency to get the current user from header information.
+    This is an optional dependency; it returns the user if found, or None otherwise.
+    It does not raise an exception if the user is not found or headers are missing.
+    """
+    logging.info("[dependencies.py] Entering get_current_user_optional")
+    if not x_user_id:
+        logging.info("[dependencies.py] No X-User-Id header found.")
+        return None
 
-        # For debugging: log the first few chars of the key and the token
-        if settings.NEXTAUTH_SECRET:
-            logger.info(f"Attempting to decode token with key starting with: {settings.NEXTAUTH_SECRET[:4]}...")
-            logger.info(f"Received token starting with: {token[:15]}...")
-        else:
-            logger.error("CRITICAL: NEXTAUTH_SECRET is not loaded in backend settings!")
-            return None
+    logging.info(f"[dependencies.py] Found user ID '{x_user_id}' in X-User-Id header.")
 
-        payload = jwt.decode(
-            token, 
-            settings.NEXTAUTH_SECRET, 
-            algorithms=[ALGORITHM]
-        )
-        
-        user_id = payload.get("sub") # NextAuth places user ID in 'sub'
-        if not user_id:
-            logger.warning(f"No 'sub' (user ID) in JWT payload: {payload}")
-            return None
-            
-        user = crud.user.get(db, id=user_id)
+    # The user ID from NextAuth is a string (CUID).
+    # We query by the string ID directly.
+    user = crud.user.get_by_id_str(db, id=x_user_id)
+    if user:
+        logging.info(f"[dependencies.py] Successfully found user by string ID: {user.email}")
+        return user
+
+    # If user is not found by ID, try to find or create them by email.
+    # This is a fallback and helps sync users who might not exist in our DB yet.
+    if x_user_email:
+        logging.info(f"[dependencies.py] User not found by ID, trying to find or create by email: {x_user_email}")
+        user = crud.user.get_by_email(db, email=x_user_email)
         if not user:
-            logger.warning(f"JWT validated but user with id '{user_id}' not found in database.")
-            return None
-        
-        logger.info(f"Successfully authenticated user via JWT: {user.email} (ID: {user.id})")
+            logging.info(f"[dependencies.py] User not found by email, creating a new one.")
+            # Use the ID from the header for the new user.
+            user_in = schemas.UserCreate(id=x_user_id, email=x_user_email, password="password_placeholder")
+            user = crud.user.create_with_id(db, obj_in=user_in)
+            logging.info(f"[dependencies.py] Created new user: {user.email} with ID {user.id}")
+        else:
+            logging.info(f"[dependencies.py] Found existing user by email: {user.email}")
         return user
         
-    except ExpiredSignatureError:
-        logger.warning("JWT validation failed: Token has expired.")
-        return None
-    except JWTError as e:
-        # This will catch padding errors, signature errors, etc.
-        logger.error(f"JWT validation failed: Token is invalid. Error: {e}", exc_info=True)
-        return None
-    except Exception as e:
-        logger.error(f"An unexpected error occurred in get_current_user_optional: {e}", exc_info=True)
-        return None 
+    logging.warning(f"[dependencies.py] Could not authenticate user with ID '{x_user_id}'. Returning None.")
+    return None 

@@ -1,9 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
 from fastapi_users import schemas
 
-class UserRead(schemas.BaseUser[int]):
+class UserRead(schemas.BaseUser[str]):
     """User schema for reading user data, includes credits."""
+    id: str
     credits: int
     creem_price_id: Optional[str] = None
     
@@ -11,7 +12,10 @@ class UserRead(schemas.BaseUser[int]):
         from_attributes = True
 
 class UserCreate(schemas.BaseUserCreate):
-    pass
+    id: Optional[str] = None
+    email: EmailStr
+    credits: int = 100 # Default credits for new users
+    password: str
 
 class UserUpdate(schemas.BaseUserUpdate):
     pass
