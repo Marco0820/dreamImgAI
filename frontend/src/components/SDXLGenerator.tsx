@@ -248,12 +248,14 @@ const SDXLGenerator = () => {
     }
     */
 
+    /*
     if (!session) {
       toast.info(t('generator.login_required'));
       sessionStorage.setItem('promptBeforeLogin', prompt);
       signIn(undefined, { callbackUrl: window.location.pathname });
       return;
     }
+    */
 
     if (!prompt.trim()) {
       toast.error(t('generator.promptRequired'));
