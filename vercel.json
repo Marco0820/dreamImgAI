@@ -21,19 +21,14 @@
     },
     {
       "src": "/(.*)",
+      "headers": {
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff"
+      },
       "dest": "frontend/$1"
     }
   ],
   "env": {
     "SKIP_ENV_VALIDATION": "1"
-  },
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" }
-      ]
-    }
-  ]
+  }
 }
