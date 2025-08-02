@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "dev": "npm --prefix frontend run dev"
+    "build": "cd frontend && npm install && npm run build",
+    "dev": "cd frontend && npm run dev",
+    "start": "cd frontend && npm start"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",
