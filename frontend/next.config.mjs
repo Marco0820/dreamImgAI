@@ -55,6 +55,7 @@ const nextConfig = {
     ],
   },
   experimental: {
+    serverComponentsExternalPackages: ['sharp'],
     // This option is removed as it's not supported in Next.js 14
     // nodeMiddleware: true, 
   },
