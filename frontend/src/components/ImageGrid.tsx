@@ -24,8 +24,8 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, onFavorite, onShare, isAu
                                     <ShareIcon className="h-6 w-6" />
                                 </button>
                                 {isAuthenticated && (
-                                    <button onClick={() => onFavorite(image.id, image.favorited_by_user)} className="text-white hover:text-pink-400 transform transition-transform duration-200 hover:scale-110">
-                                        {image.favorited_by_user ? (
+                                    <button onClick={() => onFavorite(image.id, image.favorited)} className="text-white hover:text-pink-400 transform transition-transform duration-200 hover:scale-110">
+                                        {image.favorited ? (
                                             <HeartSolid className="h-6 w-6 text-pink-500" />
                                         ) : (
                                             <HeartOutline className="h-6 w-6" />

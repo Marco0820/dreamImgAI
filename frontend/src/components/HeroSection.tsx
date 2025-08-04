@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslation } from 'next-i18next';
 import Image from 'next/image';
 
 export default function HeroSection() {
-  const t = useTranslations('Hero');
+  const { t } = useTranslation('common');
   const [prompt, setPrompt] = useState('');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,10 +54,10 @@ export default function HeroSection() {
 
       <div className="relative container mx-auto px-4 z-10 text-center">
         <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4">
-          {t('title')}
+          {t('hero.title')}
         </h1>
         <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-          {t('subtitle')}
+          {t('hero.subtitle')}
         </p>
 
         <div className="max-w-xl mx-auto bg-gray-800/50 p-6 rounded-xl border border-gray-700 shadow-lg">
@@ -65,7 +65,7 @@ export default function HeroSection() {
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder={t('placeholder')}
+              placeholder={t('hero.placeholder')}
               className="w-full h-24 p-4 pr-12 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
             />
           </div>
@@ -86,13 +86,13 @@ export default function HeroSection() {
         {isGenerating && (
           <div className="mt-8 flex justify-center items-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
-            <p className="ml-4 text-lg">{t('generating')}</p>
+            <p className="ml-4 text-lg">{t('hero.generating')}</p>
           </div>
         )}
 
         {generatedImage && (
           <div className="mt-8">
-            <h3 className="text-2xl font-bold mb-4">{t('yourMasterpiece')}</h3>
+            <h3 className="text-2xl font-bold mb-4">{t('hero.yourMasterpiece')}</h3>
             <div className="max-w-xl mx-auto bg-gray-800 p-2 rounded-lg shadow-lg">
               <Image
                 src={generatedImage}

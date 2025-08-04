@@ -248,5 +248,12 @@
   "go_to_generation_page": "前往创作",
   "try_again_button": "重试",
   "insufficient_credits_message": "您的积分不足，请充值后重试。",
-  "insufficient_credits_recharge_button": "去充值"
+  "insufficient_credits_recharge_button": "去充值",
+  "hero": {
+    "title": "让AI图片无限接近于梦想",
+    "subtitle": "全球第一款免费的多模型AI图片生成器",
+    "placeholder": "输入你的梦想...",
+    "generating": "正在生成您的杰作...",
+    "yourMasterpiece": "您的杰作"
+  }
 }

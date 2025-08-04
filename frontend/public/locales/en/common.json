@@ -266,6 +266,13 @@
   "insufficient_credits_message": "You do not have enough credits. Please top up and try again.",
   "insufficient_credits_recharge_button": "Top-up",
 
+  "hero": {
+    "title": "Bring your creative ideas to life",
+    "subtitle": "The world's first free multi-model AI image generator",
+    "placeholder": "Describe your image...",
+    "generating": "Generating your masterpiece...",
+    "yourMasterpiece": "Your Masterpiece"
+  },
   "pricing": {
     "nav_text": "Pricing",
     "title": "Choose Your Plan",

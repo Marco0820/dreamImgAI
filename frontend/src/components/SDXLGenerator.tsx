@@ -208,7 +208,6 @@ const SDXLGenerator = () => {
   // Turnstile state
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileSiteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
-  console.log('Attempting to read Turnstile Site Key:', turnstileSiteKey);
   const isTurnstileMisconfigured = !turnstileSiteKey || turnstileSiteKey === 'YOUR_TURNSTILE_SITE_KEY';
   const turnstileRef = useRef<TurnstileInstance>(null);
 
@@ -226,15 +225,18 @@ const SDXLGenerator = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[SDXLGenerator] handleSubmit triggered");
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[SDXLGenerator] handleSubmit triggered");
 
-    // --- DIAGNOSTIC LOGS ---
-    console.log("[SDXLGenerator] Verifying session state before API call...");
-    console.log(`[SDXLGenerator] Session status: ${session ? 'Exists' : 'Does not exist'}`);
-    if(session) {
-      console.log("[SDXLGenerator] Session details:", JSON.stringify(session, null, 2));
+      // --- DIAGNOSTIC LOGS ---
+      console.log("[SDXLGenerator] Verifying session state before API call...");
+      console.log(`[SDXLGenerator] Session status: ${session ? 'Exists' : 'Does not exist'}`);
+      if(session) {
+        console.log("[SDXLGenerator] Session details:", JSON.stringify(session, null, 2));
+      }
+      // --- END DIAGNOSTIC LOGS ---
     }
-    // --- END DIAGNOSTIC LOGS ---
 
     // This client-side check is removed. The backend is the single source of truth
     // for authorization and will respond with a 402 or 403 status if the user

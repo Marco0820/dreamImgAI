@@ -67,7 +67,7 @@ export const authOptions: NextAuthOptions = {
     },
     
     async session({ session, token }) {
-      if (token) {
+      if (token && session.user) {
         session.user.id = token.id as string;
         session.user.credits = token.credits as number;
         session.user.creemPriceId = token.creemPriceId as string | null;
