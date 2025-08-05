@@ -10,50 +10,67 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ------------------- MODELS -------------------
+
+// Merged User model for both NextAuth and Backend Logic
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String? // For credentials provider
-  accounts      Account[]
-  sessions      Session[]
+  id                  String    @id @default(cuid())
+  name                String?
+  email               String    @unique
+  emailVerified       DateTime? @map("email_verified")
+  image               String?   // Avatar URL
+  password            String?   // For credentials provider
+  bio                 String?
 
-  // Subscription and Usage with Creem
-  credits                Int       @default(10)
-  creemCustomerId        String?   @unique @map("creem_customer_id")
-  creemSubscriptionId    String?   @unique @map("creem_subscription_id")
-  creemPriceId           String?   @map("creem_price_id")
-  creemCurrentPeriodEnd  DateTime? @map("creem_current_period_end")
+  // -- Framework fields (from NextAuth) --
+  accounts            Account[]
+  sessions            Session[]
 
-  // Logs
-  generationLogs GenerationLog[]
+  // -- Custom Business Logic fields (from Alembic & existing schema) --
+  credits             Int      @default(10)
+  creditsSpent        Int      @default(0) @map("credits_spent")
+  isSuperuser         Boolean  @default(false) @map("is_superuser")
+  isVerified          Boolean  @default(false) @map("is_verified")
+  isActive            Boolean  @default(true) @map("is_active")
+  
+  // -- Relations to other tables --
+  images              Image[]
+  shared_images       SharedImage[]
+  comments            Comment[]
+  favorites           Favorite[]
+  generationLogs      GenerationLog[]
 }
 
+// --- NextAuth.js Required Models ---
+
 model Account {
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
+  id                 String  @id @default(cuid())
+  userId             String  @map("user_id")
+  type               String
+  provider           String
+  providerAccountId  String  @map("provider_account_id")
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@id([provider, providerAccountId])
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
 model Session {
-  sessionToken String   @unique
-  userId       String
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
 }
 
 model VerificationToken {
@@ -61,23 +78,103 @@ model VerificationToken {
   token      String   @unique
   expires    DateTime
 
-  @@id([identifier, token])
+  @@unique([identifier, token])
+  @@map("verificationtokens")
 }
 
-// Model to track image generation for both logged-in and anonymous users
+
+// --- Custom Application Models ---
+
 model GenerationLog {
-  id          String   @id @default(cuid())
-  prompt      String
-  imageUrl    String?
-  creditsUsed Int
-  createdAt   DateTime @default(now())
-
-  // Relation to User (optional)
-  userId    String?
+  id        String   @id @default(cuid())
+  prompt    String
+  imageUrl  String?  @map("image_url")
+  creditsUsed Int    @map("credits_used")
+  createdAt DateTime @default(now()) @map("created_at")
+  userId    String?  @map("user_id")
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  // For anonymous users
-  anonymousSessionId String?
+  anonymousSessionId String? @map("anonymous_session_id")
 
   @@index([anonymousSessionId])
-} 
+  @@map("generation_logs")
+}
+
+model CreditPackage {
+  id              Int      @id @default(autoincrement())
+  name            String
+  description     String?
+  priceId         String   @unique @map("price_id")
+  creditsAmount   Int      @map("credits_amount")
+  priceDisplay    String?  @map("price_display")
+  isPopular       Boolean? @map("is_popular")
+  isActive        Boolean? @map("is_active")
+
+  @@map("credit_packages")
+}
+
+model Image {
+  id              Int      @id @default(autoincrement())
+  prompt          String?
+  negative_prompt String?
+  model           String?
+  parameters      String?
+  image_url       String?
+  is_public       Boolean?
+  created_at      DateTime @default(now())
+  
+  ownerId         String? @map("owner_id")
+  owner           User?   @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  
+  sharedImage     SharedImage?
+  
+  @@map("images")
+}
+
+model SharedImage {
+  id          Int       @id @default(autoincrement())
+  title       String?
+  description String?
+  category    String?
+  likes       Int?
+  views       Int?
+  shares      Int?
+  created_at  DateTime  @default(now())
+
+  imageId     Int?      @unique @map("image_id")
+  image       Image?    @relation(fields: [imageId], references: [id], onDelete: SetNull)
+
+  userId      String?   @map("user_id")
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  comments    Comment[]
+  favorites   Favorite[]
+
+  @@map("shared_images")
+}
+
+model Comment {
+  id              Int      @id @default(autoincrement())
+  content         String?
+  created_at      DateTime @default(now())
+
+  userId          String?       @map("user_id")
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  sharedImageId   Int?          @map("shared_image_id")
+  sharedImage     SharedImage?  @relation(fields: [sharedImageId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Favorite {
+  id              Int      @id @default(autoincrement())
+  created_at      DateTime @default(now())
+  
+  userId          String?       @map("user_id")
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  sharedImageId   Int?          @map("shared_image_id")
+  sharedImage     SharedImage?  @relation(fields: [sharedImageId], references: [id], onDelete: Cascade)
+
+  @@map("favorites")
+}
