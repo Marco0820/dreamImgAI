@@ -64,7 +64,7 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
         if (dbUser) {
             token.credits = dbUser.credits;
-            token.creemPriceId = dbUser.creemPriceId;
+            // token.creemPriceId = dbUser.creemPriceId;
         }
       }
       return token;
@@ -74,7 +74,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.credits = token.credits as number;
-        session.user.creemPriceId = token.creemPriceId as string | null;
+        // session.user.creemPriceId = token.creemPriceId as string | null;
       }
       return session;
     },
