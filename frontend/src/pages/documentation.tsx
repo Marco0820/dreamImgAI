@@ -35,7 +35,7 @@ const DocumentationPage: NextPage = () => {
       icon: <FileText className="h-6 w-6" />,
       content: {
         description: "DreamImg AI 是一个先进的 AI 图像生成平台，为用户提供免费、强大且注重隐私的图像创作服务。",
-        features: [
+        characteristics: [
           "完全免费使用，无需注册",
           "多种AI模型支持（Flux.1系列、Seedream3.0）",
           "支持多种艺术风格和参数调节",
@@ -346,11 +346,11 @@ const DocumentationPage: NextPage = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* 项目概述 */}
-                  {section.id === 'overview' && (
+                  {section.id === 'overview' && section.content.characteristics && (
                     <div className="space-y-4">
                       <h4 className="text-lg font-semibold text-white">核心特性</h4>
                       <div className="grid md:grid-cols-2 gap-3">
-                        {section.content.features?.map((feature, idx) => (
+                        {section.content.characteristics.map((feature, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-gray-300">
                             <Heart className="h-4 w-4 text-pink-500 flex-shrink-0" />
                             <span>{feature}</span>
