@@ -27,7 +27,9 @@ const Header = () => {
     { key: 'features', name: 'Features', href: '/#features' },
     { key: 'pricing.nav_text', name: 'Pricing', href: '/pricing' },
     { key: 'faq', name: 'FAQ', href: '/#faq' },
+    { key: 'documentation', name: 'Documentation', href: '/documentation' },
     { key: 'my_works', name: 'My Works', href: '/my-works' },
+    { key: 'monitor', name: 'Monitor', href: '/monitor' },
     // { key: 'community', name: 'Community', href: '/community' },
   ];
 

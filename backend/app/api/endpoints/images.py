@@ -115,9 +115,10 @@ async def generate_image(
     print(f"\n[BACKEND] images.py: --- [/generate] Endpoint hit ---")
     print(f"[BACKEND] images.py: Received request body: {image_in.model_dump_json(indent=2)}")
 
-    if not settings.FIREWORKS_API_KEY:
+    if not settings.FIREWORKS_API_KEY or settings.FIREWORKS_API_KEY == "your_fireworks_api_key_here":
         print("[BACKEND] images.py: CRITICAL: Fireworks API key is not configured on the server.")
-        raise HTTPException(status_code=500, detail="Fireworks API key is not configured on the server.")
+        print("[BACKEND] images.py: Please set FIREWORKS_API_KEY in your .env file with a valid API key from Fireworks.ai")
+        raise HTTPException(status_code=500, detail="Fireworks API key is not configured. Please contact administrator.")
 
     model_id = image_in.model or "tt-flux1-schnell"
     generation_cost = 4  # Default cost for 4 images

@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // ------------------- MODELS -------------------
@@ -21,6 +21,7 @@ model User {
   image               String?   // Avatar URL
   password            String?   // For credentials provider
   bio                 String?
+  creemPriceId        String?  @map("creem_price_id")
 
   // -- Framework fields (from NextAuth) --
   accounts            Account[]

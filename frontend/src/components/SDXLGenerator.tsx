@@ -250,6 +250,7 @@ const SDXLGenerator = () => {
     }
     */
 
+    // 暂时注释掉登录限制，允许匿名用户生成图片
     /*
     if (!session) {
       toast.info(t('generator.login_required'));
