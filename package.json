@@ -7,6 +7,7 @@
     "start": "npm run start --prefix frontend"
   },
   "dependencies": {
+    "next": "^14.2.31",
     "@next-auth/prisma-adapter": "^1.0.7",
     "axios": "^1.10.0",
     "framer-motion": "^12.16.0",
